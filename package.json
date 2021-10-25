@@ -1,0 +1,19 @@
+{
+  "scripts": {
+    "postinstall": "node dist/init.js",
+    "collect": "node dist/collect.js",
+    "download": "node dist/download.js"
+  },
+  "devDependencies": {
+    "@types/ip": "^1.1.0",
+    "@types/node": "^16.11.5"
+  },
+  "dependencies": {
+    "@ddu6/cli-tools": "^0.0.21",
+    "ip": "^1.1.5"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=8.0.0"
+  }
+}
