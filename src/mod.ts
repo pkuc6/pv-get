@@ -1,21 +1,21 @@
-import {readFileSync,existsSync,mkdirSync,unlinkSync,writeFileSync,readdirSync, rmdirSync, statSync} from 'fs'
+import {readFileSync, existsSync, mkdirSync, unlinkSync, writeFileSync, readdirSync, rmdirSync, statSync} from 'fs'
 import {join} from 'path'
 import {spawn} from 'child_process'
 import * as ip from 'ip'
 import {config, Lesson, lessons, saveLessons} from './init'
 import {CLIT} from '@ddu6/cli-tools'
-import { stdout } from 'process'
-const clit=new CLIT(__dirname,config)
-const address=ip.address()
-type Term='Fall'|'Spring'|'Summer'
-async function get(url:string,params?:Record<string,string|number>,cookie='',referer=''){
-    for(let i=0;i<config.requestErrLimit;i++){
-        const result=await clit.request(url,{
+import {stdout} from 'process'
+const clit = new CLIT(__dirname, config)
+const address = ip.address()
+type Term = 'Fall' | 'Spring' | 'Summer'
+async function get(url: string, params?: Record<string, string | number>, cookie = '', referer = '') {
+    for (let i = 0; i < config.requestErrLimit; i++) {
+        const result = await clit.request(url, {
             params,
             cookie,
             referer
         })
-        if(typeof result!=='number'){
+        if (typeof result !== 'number') {
             return result
         }
         clit.out(result)
@@ -23,14 +23,14 @@ async function get(url:string,params?:Record<string,string|number>,cookie='',ref
     }
     throw new Error(`Fail to get ${url}`)
 }
-async function post(url:string,form?:Record<string,string>,cookie='',referer=''){
-    for(let i=0;i<config.requestErrLimit;i++){
-        const result=await clit.request(url,{
+async function post(url: string, form?: Record<string, string>, cookie = '', referer = '') {
+    for (let i = 0; i < config.requestErrLimit; i++) {
+        const result = await clit.request(url, {
             form,
             cookie,
             referer
         })
-        if(typeof result!=='number'){
+        if (typeof result !== 'number') {
             return result
         }
         clit.out(result)
@@ -38,183 +38,183 @@ async function post(url:string,form?:Record<string,string>,cookie='',referer='')
     }
     throw new Error(`Fail to post ${url}`)
 }
-async function getLoginCookie(studentId:string,password:string,appId:string,appName:string,redirectURL:string){
-    const {cookie}=await get('https://iaaa.pku.edu.cn/iaaa/oauth.jsp',{
-        appID:appId,
-        appName:appName,
-        redirectUrl:redirectURL
+async function getLoginCookie(studentId: string, password: string, appId: string, appName: string, redirectURL: string) {
+    const {cookie} = await get('https://iaaa.pku.edu.cn/iaaa/oauth.jsp', {
+        appID: appId,
+        appName: appName,
+        redirectUrl: redirectURL
     })
-    const {body}=await post('https://iaaa.pku.edu.cn/iaaa/oauthlogin.do',{
-        appid:appId,
-        userName:studentId,
+    const {body} = await post('https://iaaa.pku.edu.cn/iaaa/oauthlogin.do', {
+        appid: appId,
+        userName: studentId,
         password,
-        randCode:'',
-        smsCode:'',
-        otpCode:'',
-        redirUrl:redirectURL
-    },`remember=true; userName=${studentId}; ${cookie}`,'https://iaaa.pku.edu.cn/iaaa/oauth.jsp')
-    const {token}=JSON.parse(body)
-    if(typeof token!=='string'){
+        randCode: '',
+        smsCode: '',
+        otpCode: '',
+        redirUrl: redirectURL
+    }, `remember=true; userName=${studentId}; ${cookie}`, 'https://iaaa.pku.edu.cn/iaaa/oauth.jsp')
+    const {token} = JSON.parse(body)
+    if (typeof token !== 'string') {
         throw new Error(`Fail to get login cookie of app ${appId}`)
     }
-    return (await get(redirectURL,{
-        _rand:Math.random().toString(),
+    return (await get(redirectURL, {
+        _rand: Math.random().toString(),
         token
     })).cookie
 }
-async function getBlackboardSession(studentId:string,password:string){
-    const match=(await getLoginCookie(studentId,password,'blackboard','1','https://course.pku.edu.cn/webapps/bb-sso-bb_bb60/execute/authValidate/campusLogin'))
-    .match(/s_session_id=([^;]{8,}?)(?:;|$)/)
-    if(match===null){
+async function getBlackboardSession(studentId: string, password: string) {
+    const match = (await getLoginCookie(studentId, password, 'blackboard', '1', 'https://course.pku.edu.cn/webapps/bb-sso-bb_bb60/execute/authValidate/campusLogin'))
+        .match(/s_session_id=([^;]{8,}?)(?:;|$)/)
+    if (match === null) {
         throw new Error(`Fail to get blackboard session of user ${studentId}`)
     }
     return match[1]
 }
-async function getHQYToken(studentId:string,password:string){
-    const {body}=await post('https://portal.pku.edu.cn/portal2017/account/getBasicInfo.do',undefined,await getLoginCookie(studentId,password,'portal2017','北京大学校内信息门户新版','https://portal.pku.edu.cn/portal2017/ssoLogin.do'))
-    const {name}=JSON.parse(body)
-    if(typeof name!=='string'){
+async function getHQYToken(studentId: string, password: string) {
+    const {body} = await post('https://portal.pku.edu.cn/portal2017/account/getBasicInfo.do', undefined, await getLoginCookie(studentId, password, 'portal2017', '北京大学校内信息门户新版', 'https://portal.pku.edu.cn/portal2017/ssoLogin.do'))
+    const {name} = JSON.parse(body)
+    if (typeof name !== 'string') {
         throw new Error(`Fail to get hqy token of user ${studentId}`)
     }
-    const match=(await get('https://passportnewhqy.pku.edu.cn/index.php',{
-        r:'auth/login',
-        tenant_code:'1',
-        auType:'account',
-        name:name,
-        account:studentId
+    const match = (await get('https://passportnewhqy.pku.edu.cn/index.php', {
+        r: 'auth/login',
+        tenant_code: '1',
+        auType: 'account',
+        name: name,
+        account: studentId
     }))
-    .cookie
-    .match(/_token=([^;]{16,}?)(?:;|$)/)
-    if(match===null){
+        .cookie
+        .match(/_token=([^;]{16,}?)(?:;|$)/)
+    if (match === null) {
         throw new Error(`Fail to get hqy token of user ${studentId}`)
     }
     return match[1]
 }
-async function getCourseIds(blackboardSession:string){
-    let body=''
-    if(config.collectOldCourses){
-        body+=(await get('https://course.pku.edu.cn/webapps/portal/execute/tabs/tabAction',{
-            action:'refreshAjaxModule',
-            modId:'_978_1',
-            tabId:'_1_1'
-        },`s_session_id=${blackboardSession}`)).body
+async function getCourseIds(blackboardSession: string) {
+    let body = ''
+    if (config.collectOldCourses) {
+        body += (await get('https://course.pku.edu.cn/webapps/portal/execute/tabs/tabAction', {
+            action: 'refreshAjaxModule',
+            modId: '_978_1',
+            tabId: '_1_1'
+        }, `s_session_id=${blackboardSession}`)).body
     }
-    try{
-        body+=(await get('https://course.pku.edu.cn/webapps/portal/execute/tabs/tabAction',{
-            action:'refreshAjaxModule',
-            modId:'_977_1',
-            tabId:'_1_1'
-        },`s_session_id=${blackboardSession}`)).body
-    }catch(err){
-        if(err instanceof Error){
+    try {
+        body += (await get('https://course.pku.edu.cn/webapps/portal/execute/tabs/tabAction', {
+            action: 'refreshAjaxModule',
+            modId: '_977_1',
+            tabId: '_1_1'
+        }, `s_session_id=${blackboardSession}`)).body
+    } catch (err) {
+        if (err instanceof Error) {
             clit.out(err)
         }
     }
-    const ids:string[]=[]
-    for(const [,id] of body.matchAll(/key=_(\d+)/g)){
-        if(!config.ignoreCourses.includes(Number(id))){
+    const ids: string[] = []
+    for (const [, id] of body.matchAll(/key=_(\d+)/g)) {
+        if (!config.ignoreCourses.includes(Number(id))) {
             ids.push(id)
         }
     }
     return ids
 }
-async function getLessonIds(blackboardSession:string,courseId:string,courseFolder:string){
-    const {body}=await get('https://course.pku.edu.cn/webapps/bb-streammedia-hqy-bb_bb60/videoList.action',{
-        course_id:`_${courseId}_1`
-    },`s_session_id=${blackboardSession}`)
-    writeFileSync(join(__dirname,`../info/courses/${CLIT.getDate()} ${CLIT.getTime()} ${courseId}.html`),body)
-    const match=body.match(/hqyCourseId=(\d+)/)
-    if(match===null){
+async function getLessonIds(blackboardSession: string, courseId: string, courseFolder: string) {
+    const {body} = await get('https://course.pku.edu.cn/webapps/bb-streammedia-hqy-bb_bb60/videoList.action', {
+        course_id: `_${courseId}_1`
+    }, `s_session_id=${blackboardSession}`)
+    writeFileSync(join(__dirname, `../info/courses/${CLIT.getDate()}-${CLIT.getTime().replace(/:/g, '-')} ${courseId}.html`), body)
+    const match = body.match(/hqyCourseId=(\d+)/)
+    if (match === null) {
         return []
     }
-    const hqyCourseId=match[1]
-    const ids:string[]=[]
-    for(const [,name,subId] of body.matchAll(/(\d{4}-\d{2}-\d{2}第\d+-\d+节)[\s\S]+?hqySubId=(\d+)/g)){
-        if(
-            lessons.some(val=>val.courseFolder===courseFolder&&val.lessonName===name)
-            ||courseFolder.length>0&&existsSync(join(__dirname,`../archive/${courseFolder}/${name}.mp4`))
-        ){
+    const hqyCourseId = match[1]
+    const ids: string[] = []
+    for (const [, name, subId] of body.matchAll(/(\d{4}-\d{2}-\d{2}第\d+-\d+节)[\s\S]+?hqySubId=(\d+)/g)) {
+        if (
+            lessons.some(val => val.courseFolder === courseFolder && val.lessonName === name)
+            || courseFolder.length > 0 && existsSync(join(__dirname, `../archive/${courseFolder}/${name}.mp4`))
+        ) {
             continue
         }
         ids.push(`${hqyCourseId}-${subId}`)
     }
     return ids
 }
-async function getLessonInfo(hqyToken:string,lessonId:string,courseId:string,courseFolder:string){
-    const cookie=`_token=${hqyToken}`
-    const [hqyCourseId,hqySubId]=lessonId.split('-')
-    const {body}=await get('https://livingroomhqy.pku.edu.cn/courseapi/v2/schedule/search-live-course-list',{
-        all:'1',
-        course_id:hqyCourseId,
-        sub_id:hqySubId,
-        with_sub_data:'1'
-    },cookie)
-    writeFileSync(join(__dirname,`../info/lessons/${CLIT.getDate()} ${CLIT.getTime()} ${lessonId}.json`),body)
-    const list:{
-        title:string,
-        sub_title:string,
-        sub_content:string,
-        realname:string
-    }[]=JSON.parse(body).list
-    if(list.length===0){
+async function getLessonInfo(hqyToken: string, lessonId: string, courseId: string, courseFolder: string) {
+    const cookie = `_token=${hqyToken}`
+    const [hqyCourseId, hqySubId] = lessonId.split('-')
+    const {body} = await get('https://livingroomhqy.pku.edu.cn/courseapi/v2/schedule/search-live-course-list', {
+        all: '1',
+        course_id: hqyCourseId,
+        sub_id: hqySubId,
+        with_sub_data: '1'
+    }, cookie)
+    writeFileSync(join(__dirname, `../info/lessons/${CLIT.getDate()}-${CLIT.getTime().replace(/:/g, '-')} ${lessonId}.json`), body)
+    const list: {
+        title: string,
+        sub_title: string,
+        sub_content: string,
+        realname: string
+    }[] = JSON.parse(body).list
+    if (list.length === 0) {
         return
     }
     const {
-        title:courseName,
-        sub_title:lessonName,
-        sub_content:sub,
-        realname:teacher
-    }=list[0]
+        title: courseName,
+        sub_title: lessonName,
+        sub_content: sub,
+        realname: teacher
+    } = list[0]
     const {
-        firm_source:{contents:furl},
-        save_playback:{contents:surl}
-    }:{
-        firm_source:{contents:string},
-        save_playback:{contents:unknown}
-    }=JSON.parse(sub)
-    let url=furl
-    let murl=''
-    if(Array.isArray(surl)){
-        const purl:unknown=(surl.find(val=>val.resolution.includes('1080'))??{}).preview
-        if(typeof purl==='string'){
-            if(purl.endsWith('.m3u8')){
-                murl=purl
-            }else if(purl.endsWith('.mp4')){
-                url=purl
+        firm_source: {contents: furl},
+        save_playback: {contents: surl}
+    }: {
+        firm_source: {contents: string},
+        save_playback: {contents: unknown}
+    } = JSON.parse(sub)
+    let url = furl
+    let murl = ''
+    if (Array.isArray(surl)) {
+        const purl: unknown = (surl.find(val => val.resolution.includes('1080')) ?? {}).preview
+        if (typeof purl === 'string') {
+            if (purl.endsWith('.m3u8')) {
+                murl = purl
+            } else if (purl.endsWith('.mp4')) {
+                url = purl
             }
         }
-    }else if(typeof surl==='string'&&surl.endsWith('.mp4')){
-        url=surl
+    } else if (typeof surl === 'string' && surl.endsWith('.mp4')) {
+        url = surl
     }
-    const [,year,month]=(lessonName.match(/^(\d+)-(\d+)/)??[,0,0]).map(Number)
-    let term:Term='Fall'
-    if(month===7||month===8){
-        term='Summer'
-    }else if(month<7&&month>1){
-        term='Spring'
+    const [, year, month] = (lessonName.match(/^(\d+)-(\d+)/) ?? [, 0, 0]).map(Number)
+    let term: Term = 'Fall'
+    if (month === 7 || month === 8) {
+        term = 'Summer'
+    } else if (month < 7 && month > 1) {
+        term = 'Spring'
     }
-    if(courseFolder.length===0){
-        courseFolder=`${courseName} (${year} ${term} ${teacher}) ${courseId}`
-        mkdirSync(join(__dirname,`../archive/${courseFolder}/`))
+    if (courseFolder.length === 0) {
+        courseFolder = `${courseName} (${year} ${term} ${teacher}) ${courseId}`
+        mkdirSync(join(__dirname, `../archive/${courseFolder}/`))
     }
-    const info:Lesson={
+    const info: Lesson = {
         url,
         courseFolder,
         lessonName,
     }
-    if(murl.length>0){
-        const path=join(__dirname,`../archive/${courseFolder}/${lessonName}.m3u8`)
-        if(!existsSync(path)){
-            const {body}=await get(murl)
-            const match=body.match(/URI="(.+)"/)
-            if(match!==null){
-                const key=(await get(match[1],undefined,cookie)).body
-                if(key.length===16){
+    if (murl.length > 0) {
+        const path = join(__dirname, `../archive/${courseFolder}/${lessonName}.m3u8`)
+        if (!existsSync(path)) {
+            const {body} = await get(murl)
+            const match = body.match(/URI="(.+)"/)
+            if (match !== null) {
+                const key = (await get(match[1], undefined, cookie)).body
+                if (key.length === 16) {
                     writeFileSync(
                         path,
                         body
-                        .replace(/URI=".+"/,`URI="https://vk.pku6.workers.dev/${key}"`)
-                        .replace(/segment_/g,new URL('segment_',murl).href)
+                            .replace(/URI=".+"/, `URI="https://vk.pku6.workers.dev/${key}"`)
+                            .replace(/segment_/g, new URL('segment_', murl).href)
                     )
                     clit.out(`${path} created`)
                 }
@@ -224,27 +224,27 @@ async function getLessonInfo(hqyToken:string,lessonId:string,courseId:string,cou
     clit.out(`Get info of ${courseName} ${lessonName}`)
     return info
 }
-export async function collect(){
-    const courseFolders=readdirSync(join(__dirname,'../archive/'))
-    const ids=courseFolders.map(val=>val.replace(/^.*?(?=\d*$)/,''))
-    const courseIdSet:Record<string,true|undefined>={}
-    for(const {studentId,password} of config.users){
-        const session=await getBlackboardSession(studentId,password)
-        const token=await getHQYToken(studentId,password)
-        for(const id of await getCourseIds(session)){
-            if(courseIdSet[id]){
+export async function collect() {
+    const courseFolders = readdirSync(join(__dirname, '../archive/'))
+    const ids = courseFolders.map(val => val.replace(/^.*?(?=\d*$)/, ''))
+    const courseIdSet: Record<string, true | undefined> = {}
+    for (const {studentId, password} of config.users) {
+        const session = await getBlackboardSession(studentId, password)
+        const token = await getHQYToken(studentId, password)
+        for (const id of await getCourseIds(session)) {
+            if (courseIdSet[id]) {
                 continue
             }
-            courseIdSet[id]=true
-            let courseFolder=courseFolders[ids.indexOf(id)]??''
-            const lessonIds=await getLessonIds(session,id,courseFolder)
-            for(const lessonId of lessonIds){
-                const info=await getLessonInfo(token,lessonId,id,courseFolder)
-                if(info===undefined){
+            courseIdSet[id] = true
+            let courseFolder = courseFolders[ids.indexOf(id)] ?? ''
+            const lessonIds = await getLessonIds(session, id, courseFolder)
+            for (const lessonId of lessonIds) {
+                const info = await getLessonInfo(token, lessonId, id, courseFolder)
+                if (info === undefined) {
                     break
                 }
-                if(courseFolder.length===0){
-                    courseFolder=info.courseFolder
+                if (courseFolder.length === 0) {
+                    courseFolder = info.courseFolder
                 }
                 lessons.push(info)
                 saveLessons()
@@ -253,146 +253,146 @@ export async function collect(){
     }
     clit.out('Finished')
 }
-async function downloadSegments(localDir:string,remoteDir:string,ids:number[]){
-    const total=ids.length
-    let count=0
+async function downloadSegments(localDir: string, remoteDir: string, ids: number[]) {
+    const total = ids.length
+    let count = 0
     clit.out(`${total} segments will be downloaded to ${localDir}`)
-    for(let i=0;i<=config.downloadSegmentErrLimit;i++){
-        const newIds:number[]=[]
-        let promises:Promise<void>[]=[]
-        for(const id of ids){
-            promises.push((async ()=>{
-                const path=join(localDir,id+'.ts')
-                if(!existsSync(path)){
-                    if(await clit.download(new URL(`segment_${id}.ts`,remoteDir).href,path,{
-                        referer:'https://livingroomhqy.pku.edu.cn/',
-                        requestTimeout:config.downloadSegmentTimeout,
-                        proxy:config.downloadSegmentProxy
-                    })!==200){
+    for (let i = 0; i <= config.downloadSegmentErrLimit; i++) {
+        const newIds: number[] = []
+        let promises: Promise<void>[] = []
+        for (const id of ids) {
+            promises.push((async () => {
+                const path = join(localDir, id + '.ts')
+                if (!existsSync(path)) {
+                    if (await clit.download(new URL(`segment_${id}.ts`, remoteDir).href, path, {
+                        referer: 'https://livingroomhqy.pku.edu.cn/',
+                        requestTimeout: config.downloadSegmentTimeout,
+                        proxy: config.downloadSegmentProxy
+                    }) !== 200) {
                         newIds.push(id)
                         return
                     }
                 }
                 count++
-                stdout.write(`\r${(count/total*100).toFixed(3)}%`)
+                stdout.write(`\r${(count / total * 100).toFixed(3)}%`)
             })())
-            if(promises.length>=config.downloadSegmentThreads){
+            if (promises.length >= config.downloadSegmentThreads) {
                 await Promise.all(promises)
-                promises=[]
+                promises = []
             }
         }
         await Promise.all(promises)
-        if(newIds.length===0){
+        if (newIds.length === 0) {
             break
         }
-        ids=newIds
+        ids = newIds
     }
     stdout.write('\r        \n')
-    if(count===total){
+    if (count === total) {
         return 200
     }
     return 500
 }
-async function convertVideo(path:string,newPath:string){
-    return await new Promise((resolve:(val:number)=>void)=>{
-        const subProcess=spawn('ffmpeg',['-protocol_whitelist','file,http,https,tcp,tls,crypto,httpproxy','-i',path,'-movflags','faststart','-c','copy',newPath],{
-            stdio:'inherit'
+async function convertVideo(path: string, newPath: string) {
+    return await new Promise((resolve: (val: number) => void) => {
+        const subProcess = spawn('ffmpeg', ['-protocol_whitelist', 'file,http,https,tcp,tls,crypto,httpproxy', '-i', path, '-movflags', 'faststart', '-c', 'copy', newPath], {
+            stdio: 'inherit'
         })
-        subProcess.addListener('exit',code=>{
-            resolve(code??1)
+        subProcess.addListener('exit', code => {
+            resolve(code ?? 1)
         })
-        subProcess.addListener('error',err=>{
+        subProcess.addListener('error', err => {
             subProcess.kill()
             clit.out(err)
             resolve(1)
         })
     })
 }
-function rm(path:string){
-    if(!existsSync(path)){
+function rm(path: string) {
+    if (!existsSync(path)) {
         return
     }
-    if(!statSync(path).isDirectory()){
+    if (!statSync(path).isDirectory()) {
         unlinkSync(path)
         return
     }
-    for(const file of readdirSync(path)){
-        rm(join(path,file))
+    for (const file of readdirSync(path)) {
+        rm(join(path, file))
     }
     rmdirSync(path)
 }
-async function convert(){
-    for(const courseFolder of readdirSync(join(__dirname,'../archive/'))){
-        const path0=join(__dirname,`../archive/${courseFolder}/`)
-        if(!existsSync(path0)){
+async function convert() {
+    for (const courseFolder of readdirSync(join(__dirname, '../archive/'))) {
+        const path0 = join(__dirname, `../archive/${courseFolder}/`)
+        if (!existsSync(path0)) {
             continue
         }
-        for(const file of readdirSync(path0)){
-            if(file.endsWith('.m3u8')){
-                const path1=join(path0,file)
-                const newPath=path1.slice(0,-3)+'p4'
-                if(existsSync(newPath)){
+        for (const file of readdirSync(path0)) {
+            if (file.endsWith('.m3u8')) {
+                const path1 = join(path0, file)
+                const newPath = path1.slice(0, -3) + 'p4'
+                if (existsSync(newPath)) {
                     continue
                 }
-                let remoteDir=''
-                const ids:number[]=[]
-                const string=readFileSync(path1,{encoding:'utf8'})
-                .replace(/URI=".+\/(.+)"/,`URI="http://${address}:${config.keyServerPort}/$1"`)
-                .replace(/\n(.+)segment_(\d+).ts/g,(_,dir,id)=>{
-                    remoteDir=dir
-                    ids.push(Number(id))
-                    return `\n${id}.ts`
-                })
-                if(remoteDir.length===0||ids.length===0){
+                let remoteDir = ''
+                const ids: number[] = []
+                const string = readFileSync(path1, {encoding: 'utf8'})
+                    .replace(/URI=".+\/(.+)"/, `URI="http://${address}:${config.keyServerPort}/$1"`)
+                    .replace(/\n(.+)segment_(\d+).ts/g, (_, dir, id) => {
+                        remoteDir = dir
+                        ids.push(Number(id))
+                        return `\n${id}.ts`
+                    })
+                if (remoteDir.length === 0 || ids.length === 0) {
                     clit.out(`Fail to convert ${path1}`)
                     continue
                 }
-                const tmpDir=join(path0,'tmp/')
-                const tmpPath=join(tmpDir,'tmp.m3u8')
-                if(!existsSync(tmpDir)){
+                const tmpDir = join(path0, 'tmp/')
+                const tmpPath = join(tmpDir, 'tmp.m3u8')
+                if (!existsSync(tmpDir)) {
                     mkdirSync(tmpDir)
                 }
-                if(await downloadSegments(tmpDir,remoteDir,ids)!==200){
+                if (await downloadSegments(tmpDir, remoteDir, ids) !== 200) {
                     clit.out(`Fail to convert ${path1}`)
                     continue
                 }
-                writeFileSync(tmpPath,string)
-                if(await convertVideo(tmpPath,newPath)===0){
+                writeFileSync(tmpPath, string)
+                if (await convertVideo(tmpPath, newPath) === 0) {
                     rm(tmpDir)
                     clit.out(`${path1} converted`)
                     continue
                 }
                 clit.out(`Fail to convert ${path1}`)
-                if(existsSync(newPath)){
+                if (existsSync(newPath)) {
                     unlinkSync(newPath)
                 }
             }
         }
     }
 }
-export async function download(){
-    while(true){
-        const lesson=lessons.pop()
-        if(lesson===undefined){
+export async function download() {
+    while (true) {
+        const lesson = lessons.pop()
+        if (lesson === undefined) {
             break
         }
-        const {url,courseFolder,lessonName}=lesson
-        if(!config.useFirmURL&&url.startsWith('http:')){
+        const {url, courseFolder, lessonName} = lesson
+        if (!config.useFirmURL && url.startsWith('http:')) {
             saveLessons()
             continue
         }
-        const path=join(__dirname,`../archive/${courseFolder}/${lessonName}.mp4`)
-        if(existsSync(path)){
+        const path = join(__dirname, `../archive/${courseFolder}/${lessonName}.mp4`)
+        if (existsSync(path)) {
             saveLessons()
             continue
         }
-        const result=await clit.download(url,path,{
-            referer:'https://livingroomhqy.pku.edu.cn/',
-            requestTimeout:config.downloadVideoTimeout,
-            proxy:config.downloadFirmVideoProxy,
-            verbose:true
+        const result = await clit.download(url, path, {
+            referer: 'https://livingroomhqy.pku.edu.cn/',
+            requestTimeout: config.downloadVideoTimeout,
+            proxy: config.downloadFirmVideoProxy,
+            verbose: true
         })
-        if(result===200){
+        if (result === 200) {
             saveLessons()
             clit.out(`${url} downloaded to ${path}`)
             continue

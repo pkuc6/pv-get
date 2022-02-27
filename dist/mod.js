@@ -125,7 +125,7 @@ async function getLessonIds(blackboardSession, courseId, courseFolder) {
     const { body } = await get('https://course.pku.edu.cn/webapps/bb-streammedia-hqy-bb_bb60/videoList.action', {
         course_id: `_${courseId}_1`
     }, `s_session_id=${blackboardSession}`);
-    (0, fs_1.writeFileSync)((0, path_1.join)(__dirname, `../info/courses/${cli_tools_1.CLIT.getDate()} ${cli_tools_1.CLIT.getTime()} ${courseId}.html`), body);
+    (0, fs_1.writeFileSync)((0, path_1.join)(__dirname, `../info/courses/${cli_tools_1.CLIT.getDate()}-${cli_tools_1.CLIT.getTime().replace(/:/g, '-')} ${courseId}.html`), body);
     const match = body.match(/hqyCourseId=(\d+)/);
     if (match === null) {
         return [];
@@ -150,7 +150,7 @@ async function getLessonInfo(hqyToken, lessonId, courseId, courseFolder) {
         sub_id: hqySubId,
         with_sub_data: '1'
     }, cookie);
-    (0, fs_1.writeFileSync)((0, path_1.join)(__dirname, `../info/lessons/${cli_tools_1.CLIT.getDate()} ${cli_tools_1.CLIT.getTime()} ${lessonId}.json`), body);
+    (0, fs_1.writeFileSync)((0, path_1.join)(__dirname, `../info/lessons/${cli_tools_1.CLIT.getDate()}-${cli_tools_1.CLIT.getTime().replace(/:/g, '-')} ${lessonId}.json`), body);
     const list = JSON.parse(body).list;
     if (list.length === 0) {
         return;
