@@ -14,6 +14,7 @@ const path_1 = require("path");
     }
 });
 exports.config = {
+    allowUnauthorized: true,
     collectOldCourses: false,
     downloadFirmVideoProxy: 'http://host',
     downloadSegmentErrLimit: 100,
@@ -29,7 +30,7 @@ exports.config = {
     useFirmURL: false,
     users: [{
             studentId: '1*000*****',
-            password: '********',
+            password: '********'
         }]
 };
 exports.lessons = [];
