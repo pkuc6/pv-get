@@ -26,8 +26,8 @@ Fill in the `users` field in `config.json`.
 
 ```
 npm run collect
-
 ```
+
 (Optional) Modify `lessons.json` to decide which lessons to download.
 
 ```
