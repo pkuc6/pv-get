@@ -301,55 +301,6 @@ function rm(path) {
     }
     (0, fs_1.rmdirSync)(path);
 }
-async function convert() {
-    for (const courseFolder of (0, fs_1.readdirSync)((0, path_1.join)(__dirname, '../archive/'))) {
-        const path0 = (0, path_1.join)(__dirname, `../archive/${courseFolder}/`);
-        if (!(0, fs_1.existsSync)(path0)) {
-            continue;
-        }
-        for (const file of (0, fs_1.readdirSync)(path0)) {
-            if (file.endsWith('.m3u8')) {
-                const path1 = (0, path_1.join)(path0, file);
-                const newPath = path1.slice(0, -3) + 'p4';
-                if ((0, fs_1.existsSync)(newPath)) {
-                    continue;
-                }
-                let remoteDir = '';
-                const ids = [];
-                const string = (0, fs_1.readFileSync)(path1, { encoding: 'utf8' })
-                    .replace(/URI=".+\/(.+)"/, `URI="http://${address}:${init_1.config.keyServerPort}/$1"`)
-                    .replace(/\n(.+)segment_(\d+).ts/g, (_, dir, id) => {
-                    remoteDir = dir;
-                    ids.push(Number(id));
-                    return `\n${id}.ts`;
-                });
-                if (remoteDir.length === 0 || ids.length === 0) {
-                    clit.out(`Fail to convert ${path1}`);
-                    continue;
-                }
-                const tmpDir = (0, path_1.join)(path0, 'tmp/');
-                const tmpPath = (0, path_1.join)(tmpDir, 'tmp.m3u8');
-                if (!(0, fs_1.existsSync)(tmpDir)) {
-                    (0, fs_1.mkdirSync)(tmpDir);
-                }
-                if (await downloadSegments(tmpDir, remoteDir, ids) !== 200) {
-                    clit.out(`Fail to convert ${path1}`);
-                    continue;
-                }
-                (0, fs_1.writeFileSync)(tmpPath, string);
-                if (await convertVideo(tmpPath, newPath) === 0) {
-                    rm(tmpDir);
-                    clit.out(`${path1} converted`);
-                    continue;
-                }
-                clit.out(`Fail to convert ${path1}`);
-                if ((0, fs_1.existsSync)(newPath)) {
-                    (0, fs_1.unlinkSync)(newPath);
-                }
-            }
-        }
-    }
-}
 async function download() {
     while (true) {
         const lesson = init_1.lessons.pop();

@@ -316,55 +316,6 @@ function rm(path: string) {
     }
     rmdirSync(path)
 }
-async function convert() {
-    for (const courseFolder of readdirSync(join(__dirname, '../archive/'))) {
-        const path0 = join(__dirname, `../archive/${courseFolder}/`)
-        if (!existsSync(path0)) {
-            continue
-        }
-        for (const file of readdirSync(path0)) {
-            if (file.endsWith('.m3u8')) {
-                const path1 = join(path0, file)
-                const newPath = path1.slice(0, -3) + 'p4'
-                if (existsSync(newPath)) {
-                    continue
-                }
-                let remoteDir = ''
-                const ids: number[] = []
-                const string = readFileSync(path1, {encoding: 'utf8'})
-                    .replace(/URI=".+\/(.+)"/, `URI="http://${address}:${config.keyServerPort}/$1"`)
-                    .replace(/\n(.+)segment_(\d+).ts/g, (_, dir, id) => {
-                        remoteDir = dir
-                        ids.push(Number(id))
-                        return `\n${id}.ts`
-                    })
-                if (remoteDir.length === 0 || ids.length === 0) {
-                    clit.out(`Fail to convert ${path1}`)
-                    continue
-                }
-                const tmpDir = join(path0, 'tmp/')
-                const tmpPath = join(tmpDir, 'tmp.m3u8')
-                if (!existsSync(tmpDir)) {
-                    mkdirSync(tmpDir)
-                }
-                if (await downloadSegments(tmpDir, remoteDir, ids) !== 200) {
-                    clit.out(`Fail to convert ${path1}`)
-                    continue
-                }
-                writeFileSync(tmpPath, string)
-                if (await convertVideo(tmpPath, newPath) === 0) {
-                    rm(tmpDir)
-                    clit.out(`${path1} converted`)
-                    continue
-                }
-                clit.out(`Fail to convert ${path1}`)
-                if (existsSync(newPath)) {
-                    unlinkSync(newPath)
-                }
-            }
-        }
-    }
-}
 export async function download() {
     while (true) {
         const lesson = lessons.pop()
