@@ -24,7 +24,6 @@ export const config = {
     keyServerPort: 39789,
     requestErrLimit: 10,
     requestTimeout: 10,
-    useFirmURL: false,
     users: [{
         studentId: '1*000*****',
         password: '********'

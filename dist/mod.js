@@ -158,16 +158,10 @@ async function getLessonInfo(hqyToken, lessonId, courseId, courseFolder) {
     const { title: courseName, sub_title: lessonName, sub_content: sub, realname: teacher } = list[0];
     const { firm_source: { contents: furl }, save_playback: { contents: surl } } = JSON.parse(sub);
     let url = furl;
-    let murl = '';
     if (Array.isArray(surl)) {
-        const purl = (surl.find(val => val.resolution.includes('1080')) ?? {}).preview;
+        const purl = (surl.find(val => Number(val.resolution.slice(0, 4)) >= 1080) ?? {}).preview;
         if (typeof purl === 'string') {
-            if (purl.endsWith('.m3u8')) {
-                murl = purl;
-            }
-            else if (purl.endsWith('.mp4')) {
-                url = purl;
-            }
+            url = purl;
         }
     }
     else if (typeof surl === 'string' && surl.endsWith('.mp4')) {
@@ -190,17 +184,17 @@ async function getLessonInfo(hqyToken, lessonId, courseId, courseFolder) {
         courseFolder,
         lessonName,
     };
-    if (murl.length > 0) {
+    if (url.endsWith('.m3u8')) {
         const path = (0, path_1.join)(__dirname, `../archive/${courseFolder}/${lessonName}.m3u8`);
         if (!(0, fs_1.existsSync)(path)) {
-            const { body } = await get(murl);
+            const { body } = await get(url);
             const match = body.match(/URI="(.+)"/);
             if (match !== null) {
                 const key = (await get(match[1], undefined, cookie)).body;
                 if (key.length === 16) {
                     (0, fs_1.writeFileSync)(path, body
                         .replace(/URI=".+"/, `URI="https://vk.pku6.workers.dev/${key}"`)
-                        .replace(/segment_/g, new URL('segment_', murl).href));
+                        .replace(/segment_/g, new URL('segment_', url).href));
                     clit.out(`${path} created`);
                 }
             }
@@ -363,13 +357,58 @@ async function download() {
             break;
         }
         const { url, courseFolder, lessonName } = lesson;
-        if (!init_1.config.useFirmURL && url.startsWith('http:')) {
-            (0, init_1.saveLessons)();
-            continue;
-        }
         const path = (0, path_1.join)(__dirname, `../archive/${courseFolder}/${lessonName}.mp4`);
         if ((0, fs_1.existsSync)(path)) {
             (0, init_1.saveLessons)();
+            continue;
+        }
+        if (url.endsWith('.m3u8')) {
+            const m3u8Path = (0, path_1.join)(__dirname, `../archive/${courseFolder}/${lessonName}.m3u8`);
+            if (!(0, fs_1.existsSync)(m3u8Path)) {
+                (0, init_1.saveLessons)();
+                continue;
+            }
+            let remoteDir = '';
+            const ids = [];
+            const string = (0, fs_1.readFileSync)(m3u8Path, { encoding: 'utf8' })
+                .replace(/URI=".+\/(.+)"/, `URI="http://${address}:${init_1.config.keyServerPort}/$1"`)
+                .replace(/\n(.+)segment_(\d+).ts/g, (_, dir, id) => {
+                remoteDir = dir;
+                ids.push(Number(id));
+                return `\n${id}.ts`;
+            });
+            if (remoteDir.length === 0 || ids.length === 0) {
+                init_1.lessons.unshift(lesson);
+                (0, init_1.saveLessons)();
+                clit.out(`Fail to convert ${m3u8Path}`);
+                await clit.sleep(init_1.config.errSleep);
+                continue;
+            }
+            const tmpDir = (0, path_1.join)(__dirname, `../archive/${courseFolder}/tmp/`);
+            const tmpPath = (0, path_1.join)(tmpDir, 'tmp.m3u8');
+            if (!(0, fs_1.existsSync)(tmpDir)) {
+                (0, fs_1.mkdirSync)(tmpDir);
+            }
+            if (await downloadSegments(tmpDir, remoteDir, ids) !== 200) {
+                init_1.lessons.unshift(lesson);
+                (0, init_1.saveLessons)();
+                clit.out(`Fail to convert ${m3u8Path}`);
+                await clit.sleep(init_1.config.errSleep);
+                continue;
+            }
+            (0, fs_1.writeFileSync)(tmpPath, string);
+            if (await convertVideo(tmpPath, path) === 0) {
+                rm(tmpDir);
+                clit.out(`${m3u8Path} converted`);
+                continue;
+            }
+            init_1.lessons.unshift(lesson);
+            (0, init_1.saveLessons)();
+            clit.out(`Fail to convert ${m3u8Path}`);
+            if ((0, fs_1.existsSync)(path)) {
+                (0, fs_1.unlinkSync)(path);
+            }
+            await clit.sleep(init_1.config.errSleep);
             continue;
         }
         const result = await clit.download(url, path, {
@@ -388,7 +427,6 @@ async function download() {
         clit.out(`${result}, fail to download ${url} to ${path}`);
         await clit.sleep(init_1.config.errSleep);
     }
-    await convert();
     clit.out('Finished');
 }
 exports.download = download;
