@@ -246,8 +246,8 @@ export async function collect() {
                 if (courseFolder.length === 0) {
                     courseFolder = info.courseFolder
                 }
-                lessons.push(info)
-                saveLessons()
+                // lessons.push(info)
+                // saveLessons()
             }
         }
     }

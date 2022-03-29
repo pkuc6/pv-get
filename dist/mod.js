@@ -231,8 +231,8 @@ async function collect() {
                 if (courseFolder.length === 0) {
                     courseFolder = info.courseFolder;
                 }
-                init_1.lessons.push(info);
-                (0, init_1.saveLessons)();
+                // lessons.push(info)
+                // saveLessons()
             }
         }
     }
