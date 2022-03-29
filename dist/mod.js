@@ -161,19 +161,18 @@ async function getLessonInfo(hqyToken, lessonId, courseId, courseFolder) {
     if (Array.isArray(surl)) {
         const result = surl.find(value => Number(value.resolution.slice(0, 4)) >= 1080
             && !value.preview.includes('expire='));
-        if (result === undefined) {
-            return;
+        if (result !== undefined) {
+            const purl = result.preview;
+            if (typeof purl === 'string') {
+                url = purl;
+            }
         }
-        const purl = result.preview;
-        if (typeof purl !== 'string') {
-            return;
-        }
-        url = purl;
     }
     else if (typeof surl === 'string' && surl.endsWith('.mp4')) {
         url = surl;
     }
-    else {
+    if (url === undefined) {
+        clit.out(`Fail to get info of ${courseName} ${lessonName}`);
         return;
     }
     const [, year, month] = (lessonName.match(/^(\d+)-(\d+)/) ?? [, 0, 0]).map(Number);
