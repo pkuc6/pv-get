@@ -156,16 +156,25 @@ async function getLessonInfo(hqyToken, lessonId, courseId, courseFolder) {
         return;
     }
     const { title: courseName, sub_title: lessonName, sub_content: sub, realname: teacher } = list[0];
-    const { firm_source: { contents: furl }, save_playback: { contents: surl } } = JSON.parse(sub);
-    let url = furl;
+    const { save_playback: { contents: surl } } = JSON.parse(sub);
+    let url;
     if (Array.isArray(surl)) {
-        const purl = (surl.find(val => Number(val.resolution.slice(0, 4)) >= 1080) ?? {}).preview;
-        if (typeof purl === 'string') {
-            url = purl;
+        const result = surl.find(value => Number(value.resolution.slice(0, 4)) >= 1080
+            && !value.preview.includes('expire='));
+        if (result === undefined) {
+            return;
         }
+        const purl = result.preview;
+        if (typeof purl !== 'string') {
+            return;
+        }
+        url = purl;
     }
     else if (typeof surl === 'string' && surl.endsWith('.mp4')) {
         url = surl;
+    }
+    else {
+        return;
     }
     const [, year, month] = (lessonName.match(/^(\d+)-(\d+)/) ?? [, 0, 0]).map(Number);
     let term = 'Fall';

@@ -166,20 +166,29 @@ async function getLessonInfo(hqyToken: string, lessonId: string, courseId: strin
         realname: teacher
     } = list[0]
     const {
-        firm_source: {contents: furl},
         save_playback: {contents: surl}
     }: {
         firm_source: {contents: string},
         save_playback: {contents: unknown}
     } = JSON.parse(sub)
-    let url = furl
+    let url: string | undefined
     if (Array.isArray(surl)) {
-        const purl: unknown = (surl.find(val => Number(val.resolution.slice(0, 4)) >= 1080) ?? {}).preview
-        if (typeof purl === 'string') {
-            url = purl
+        const result = surl.find(
+            value => Number(value.resolution.slice(0, 4)) >= 1080
+                && !value.preview.includes('expire=')
+        )
+        if (result === undefined) {
+            return
         }
+        const purl = result.preview
+        if (typeof purl !== 'string') {
+            return
+        }
+        url = purl
     } else if (typeof surl === 'string' && surl.endsWith('.mp4')) {
         url = surl
+    } else {
+        return
     }
     const [, year, month] = (lessonName.match(/^(\d+)-(\d+)/) ?? [, 0, 0]).map(Number)
     let term: Term = 'Fall'
