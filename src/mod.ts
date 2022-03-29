@@ -413,6 +413,7 @@ export async function download() {
             }
             writeFileSync(tmpPath, string)
             if (await convertVideo(tmpPath, path) === 0) {
+                saveLessons()
                 rm(tmpDir)
                 clit.out(`${m3u8Path} converted`)
                 continue

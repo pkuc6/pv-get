@@ -398,6 +398,7 @@ async function download() {
             }
             (0, fs_1.writeFileSync)(tmpPath, string);
             if (await convertVideo(tmpPath, path) === 0) {
+                (0, init_1.saveLessons)();
                 rm(tmpDir);
                 clit.out(`${m3u8Path} converted`);
                 continue;
