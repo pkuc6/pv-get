@@ -1,5 +1,5 @@
 import {readFileSync, existsSync, mkdirSync, unlinkSync, writeFileSync, readdirSync, rmdirSync, statSync} from 'fs'
-import {join} from 'path'
+import {join, resolve} from 'path'
 import {spawn} from 'child_process'
 import * as ip from 'ip'
 import {config, Lesson, lessons, saveLessons} from './init'
@@ -132,7 +132,7 @@ async function getLessonIds(blackboardSession: string, courseId: string, courseF
     for (const [, name, subId] of body.matchAll(/(\d{4}-\d{2}-\d{2}第\d+-\d+节)[\s\S]+?hqySubId=(\d+)/g)) {
         if (
             lessons.some(val => val.courseFolder === courseFolder && val.lessonName === name)
-            || courseFolder.length > 0 && existsSync(join(__dirname, '..', config.archiveDir, `${courseFolder}/${name}.mp4`))
+            || courseFolder.length > 0 && existsSync(join(resolve(__dirname, '..', config.archiveDir), `${courseFolder}/${name}.mp4`))
         ) {
             continue
         }
@@ -199,7 +199,7 @@ async function getLessonInfo(hqyToken: string, lessonId: string, courseId: strin
     }
     if (courseFolder.length === 0) {
         courseFolder = `${courseName} (${year} ${term} ${teacher}) ${courseId}`
-        mkdirSync(join(__dirname, '..', config.archiveDir, `${courseFolder}/`))
+        mkdirSync(join(resolve(__dirname, '..', config.archiveDir), `${courseFolder}/`))
     }
     const info: Lesson = {
         url,
@@ -207,7 +207,7 @@ async function getLessonInfo(hqyToken: string, lessonId: string, courseId: strin
         lessonName,
     }
     if (url.endsWith('.m3u8')) {
-        const path = join(__dirname, '..', config.archiveDir, `${courseFolder}/${lessonName}.m3u8`)
+        const path = join(resolve(__dirname, '..', config.archiveDir), `${courseFolder}/${lessonName}.m3u8`)
         if (!existsSync(path)) {
             const {body} = await get(url)
             const match = body.match(/URI="(.+)"/)
@@ -229,7 +229,7 @@ async function getLessonInfo(hqyToken: string, lessonId: string, courseId: strin
     return info
 }
 export async function collect() {
-    const courseFolders = readdirSync(join(__dirname, '..', config.archiveDir, '/'))
+    const courseFolders = readdirSync(join(resolve(__dirname, '..', config.archiveDir), '/'))
     const ids = courseFolders.map(val => val.replace(/^.*?(?=\d*$)/, ''))
     const courseIdSet: Record<string, true | undefined> = {}
     for (const {studentId, password} of config.users) {
@@ -332,13 +332,13 @@ export async function download() {
             break
         }
         const {url, courseFolder, lessonName} = lesson
-        const path = join(__dirname, '..', config.archiveDir, `${courseFolder}/${lessonName}.mp4`)
+        const path = join(resolve(__dirname, '..', config.archiveDir), `${courseFolder}/${lessonName}.mp4`)
         if (existsSync(path)) {
             saveLessons()
             continue
         }
         if (url.endsWith('.m3u8')) {
-            const m3u8Path = join(__dirname, '..', config.archiveDir, `${courseFolder}/${lessonName}.m3u8`)
+            const m3u8Path = join(resolve(__dirname, '..', config.archiveDir), `${courseFolder}/${lessonName}.m3u8`)
             if (!existsSync(m3u8Path)) {
                 saveLessons()
                 continue
@@ -359,7 +359,7 @@ export async function download() {
                 await clit.sleep(config.errSleep)
                 continue
             }
-            const tmpDir = join(__dirname, '..', config.archiveDir, `${courseFolder}/tmp/`)
+            const tmpDir = join(resolve(__dirname, '..', config.archiveDir), `${courseFolder}/tmp/`)
             const tmpPath = join(tmpDir, 'tmp.m3u8')
             if (!existsSync(tmpDir)) {
                 mkdirSync(tmpDir)
