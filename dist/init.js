@@ -1,10 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.saveLessons = exports.lessons = exports.config = void 0;
+exports.archiveDir = exports.saveLessons = exports.lessons = exports.config = void 0;
 const fs_1 = require("fs");
 const path_1 = require("path");
 [
-    '../archive/',
     '../info/',
     '../info/lessons/',
     '../info/courses/'
@@ -51,4 +50,8 @@ if (!(0, fs_1.existsSync)(path1)) {
 }
 else {
     exports.lessons.push(...JSON.parse((0, fs_1.readFileSync)(path1, { encoding: 'utf8' })));
+}
+exports.archiveDir = (0, path_1.join)((0, path_1.resolve)(__dirname, '..', exports.config.archiveDir), '/');
+if (!(0, fs_1.existsSync)(exports.archiveDir)) {
+    (0, fs_1.mkdirSync)(exports.archiveDir);
 }

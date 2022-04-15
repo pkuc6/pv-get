@@ -134,7 +134,7 @@ async function getLessonIds(blackboardSession, courseId, courseFolder) {
     const ids = [];
     for (const [, name, subId] of body.matchAll(/(\d{4}-\d{2}-\d{2}第\d+-\d+节)[\s\S]+?hqySubId=(\d+)/g)) {
         if (init_1.lessons.some(val => val.courseFolder === courseFolder && val.lessonName === name)
-            || courseFolder.length > 0 && (0, fs_1.existsSync)((0, path_1.join)((0, path_1.resolve)(__dirname, '..', init_1.config.archiveDir), `${courseFolder}/${name}.mp4`))) {
+            || courseFolder.length > 0 && (0, fs_1.existsSync)((0, path_1.join)(init_1.archiveDir, `${courseFolder}/${name}.mp4`))) {
             continue;
         }
         ids.push(`${hqyCourseId}-${subId}`);
@@ -185,7 +185,7 @@ async function getLessonInfo(hqyToken, lessonId, courseId, courseFolder) {
     }
     if (courseFolder.length === 0) {
         courseFolder = `${courseName} (${year} ${term} ${teacher}) ${courseId}`;
-        (0, fs_1.mkdirSync)((0, path_1.join)((0, path_1.resolve)(__dirname, '..', init_1.config.archiveDir), `${courseFolder}/`));
+        (0, fs_1.mkdirSync)((0, path_1.join)(init_1.archiveDir, `${courseFolder}/`));
     }
     const info = {
         url,
@@ -193,7 +193,7 @@ async function getLessonInfo(hqyToken, lessonId, courseId, courseFolder) {
         lessonName,
     };
     if (url.endsWith('.m3u8')) {
-        const path = (0, path_1.join)((0, path_1.resolve)(__dirname, '..', init_1.config.archiveDir), `${courseFolder}/${lessonName}.m3u8`);
+        const path = (0, path_1.join)(init_1.archiveDir, `${courseFolder}/${lessonName}.m3u8`);
         if (!(0, fs_1.existsSync)(path)) {
             const { body } = await get(url);
             const match = body.match(/URI="(.+)"/);
@@ -212,7 +212,7 @@ async function getLessonInfo(hqyToken, lessonId, courseId, courseFolder) {
     return info;
 }
 async function collect() {
-    const courseFolders = (0, fs_1.readdirSync)((0, path_1.join)((0, path_1.resolve)(__dirname, '..', init_1.config.archiveDir), '/'));
+    const courseFolders = (0, fs_1.readdirSync)(init_1.archiveDir);
     const ids = courseFolders.map(val => val.replace(/^.*?(?=\d*$)/, ''));
     const courseIdSet = {};
     for (const { studentId, password } of init_1.config.users) {
@@ -316,13 +316,13 @@ async function download() {
             break;
         }
         const { url, courseFolder, lessonName } = lesson;
-        const path = (0, path_1.join)((0, path_1.resolve)(__dirname, '..', init_1.config.archiveDir), `${courseFolder}/${lessonName}.mp4`);
+        const path = (0, path_1.join)(init_1.archiveDir, `${courseFolder}/${lessonName}.mp4`);
         if ((0, fs_1.existsSync)(path)) {
             (0, init_1.saveLessons)();
             continue;
         }
         if (url.endsWith('.m3u8')) {
-            const m3u8Path = (0, path_1.join)((0, path_1.resolve)(__dirname, '..', init_1.config.archiveDir), `${courseFolder}/${lessonName}.m3u8`);
+            const m3u8Path = (0, path_1.join)(init_1.archiveDir, `${courseFolder}/${lessonName}.m3u8`);
             if (!(0, fs_1.existsSync)(m3u8Path)) {
                 (0, init_1.saveLessons)();
                 continue;
@@ -343,7 +343,7 @@ async function download() {
                 await clit.sleep(init_1.config.errSleep);
                 continue;
             }
-            const tmpDir = (0, path_1.join)((0, path_1.resolve)(__dirname, '..', init_1.config.archiveDir), `${courseFolder}/tmp/`);
+            const tmpDir = (0, path_1.join)(init_1.archiveDir, `${courseFolder}/tmp/`);
             const tmpPath = (0, path_1.join)(tmpDir, 'tmp.m3u8');
             if (!(0, fs_1.existsSync)(tmpDir)) {
                 (0, fs_1.mkdirSync)(tmpDir);

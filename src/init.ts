@@ -1,7 +1,6 @@
 import {existsSync, mkdirSync, writeFileSync, readFileSync} from 'fs'
-import {join} from 'path'
+import {join, resolve} from 'path'
 [
-    '../archive/',
     '../info/',
     '../info/lessons/',
     '../info/courses/'
@@ -50,4 +49,8 @@ if (!existsSync(path1)) {
     saveLessons()
 } else {
     lessons.push(...JSON.parse(readFileSync(path1, {encoding: 'utf8'})))
+}
+export const archiveDir = join(resolve(__dirname, '..', config.archiveDir), '/')
+if (!existsSync(archiveDir)) {
+    mkdirSync(archiveDir)
 }
