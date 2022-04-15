@@ -11,6 +11,7 @@ import {join} from 'path'
     }
 })
 export const config = {
+    archiveDir: 'archive',
     allowUnauthorized: true,
     collectOldCourses: false,
     downloadFirmVideoProxy: 'http://host',

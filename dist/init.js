@@ -14,6 +14,7 @@ const path_1 = require("path");
     }
 });
 exports.config = {
+    archiveDir: 'archive',
     allowUnauthorized: true,
     collectOldCourses: false,
     downloadFirmVideoProxy: 'http://host',
