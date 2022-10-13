@@ -160,7 +160,7 @@ async function getLessonInfo(hqyToken, lessonId, courseId, courseFolder) {
     });
     (0, fs_1.writeFileSync)((0, path_1.join)(__dirname, `../info/lessons/${cli_tools_1.CLIT.getDate()}-${cli_tools_1.CLIT.getTime().replace(/:/g, '-')} ${lessonId}.json`), body);
     const list = JSON.parse(body).list;
-    if (list.length === 0) {
+    if (list === undefined || list.length === 0) {
         return;
     }
     const { title: courseName, sub_title: lessonName, sub_content: sub, realname: teacher } = list[0];

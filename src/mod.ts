@@ -164,8 +164,8 @@ async function getLessonInfo(hqyToken: string, lessonId: string, courseId: strin
         sub_title: string,
         sub_content: string,
         realname: string
-    }[] = JSON.parse(body).list
-    if (list.length === 0) {
+    }[] | undefined = JSON.parse(body).list
+    if (list === undefined || list.length === 0) {
         return
     }
     const {
