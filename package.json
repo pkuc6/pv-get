@@ -9,7 +9,7 @@
     "@types/node": "^16.11.5"
   },
   "dependencies": {
-    "@ddu6/cli-tools": "^0.0.22",
+    "@ddu6/cli-tools": "^0.0.23",
     "ip": "^1.1.5"
   },
   "engines": {

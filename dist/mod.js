@@ -10,12 +10,13 @@ const cli_tools_1 = require("@ddu6/cli-tools");
 const process_1 = require("process");
 const clit = new cli_tools_1.CLIT(__dirname, init_1.config);
 const address = ip.address();
-async function get(url, params, cookie = '', referer = '') {
+async function get(url, params, cookie = '', referer = '', headers = {}) {
     for (let i = 0; i < init_1.config.requestErrLimit; i++) {
         const result = await clit.request(url, {
             params,
             cookie,
-            referer
+            referer,
+            headers
         });
         if (typeof result !== 'number') {
             return result;
@@ -25,12 +26,13 @@ async function get(url, params, cookie = '', referer = '') {
     }
     throw new Error(`Fail to get ${url}`);
 }
-async function post(url, form, cookie = '', referer = '') {
+async function post(url, form, cookie = '', referer = '', headers = {}) {
     for (let i = 0; i < init_1.config.requestErrLimit; i++) {
         const result = await clit.request(url, {
             form,
             cookie,
-            referer
+            referer,
+            headers
         });
         if (typeof result !== 'number') {
             return result;
@@ -64,13 +66,14 @@ async function getLoginCookie(studentId, password, appId, appName, redirectURL) 
         token
     })).cookie;
 }
-async function getBlackboardSession(studentId, password) {
-    const match = (await getLoginCookie(studentId, password, 'blackboard', '1', 'https://course.pku.edu.cn/webapps/bb-sso-bb_bb60/execute/authValidate/campusLogin'))
-        .match(/s_session_id=([^;]{8,}?)(?:;|$)/);
-    if (match === null) {
-        throw new Error(`Fail to get blackboard session of user ${studentId}`);
-    }
-    return match[1];
+async function getBlackboardCookie(studentId, password) {
+    // const match = (await getLoginCookie(studentId, password, 'blackboard', '1', 'https://course.pku.edu.cn/webapps/bb-sso-bb_bb60/execute/authValidate/campusLogin'))
+    //     .match(/s_session_id=([^;]{8,}?)(?:;|$)/)
+    // if (match === null) {
+    //     throw new Error(`Fail to get blackboard session of user ${studentId}`)
+    // }
+    // return match[1]
+    return await getLoginCookie(studentId, password, 'blackboard', '1', 'https://course.pku.edu.cn/webapps/bb-sso-bb_bb60/execute/authValidate/campusLogin');
 }
 async function getHQYToken(studentId, name) {
     // const {body} = await post('https://portal.pku.edu.cn/portal2017/account/getBasicInfo.do', undefined, await getLoginCookie(studentId, password, 'portal2017', '北京大学校内信息门户新版', 'https://portal.pku.edu.cn/portal2017/ssoLogin.do'))
@@ -92,7 +95,7 @@ async function getHQYToken(studentId, name) {
     }
     return match[1];
 }
-async function getCourseIds(blackboardSession) {
+async function getCourseIds(cookie) {
     let body = '';
     // if (config.collectOldCourses) {
     //     body += (await get('https://course.pku.edu.cn/webapps/portal/execute/tabs/tabAction', {
@@ -106,7 +109,7 @@ async function getCourseIds(blackboardSession) {
         // action: 'refreshAjaxModule',
         // modId: '_977_1',
         // tabId: '_1_1'
-        }, `s_session_id=${blackboardSession}`)).body;
+        }, cookie)).body;
     }
     catch (err) {
         if (err instanceof Error) {
@@ -124,10 +127,10 @@ async function getCourseIds(blackboardSession) {
     }
     return ids;
 }
-async function getLessonIds(blackboardSession, courseId, courseFolder) {
+async function getLessonIds(cookie, courseId, courseFolder) {
     const { body } = await get('https://course.pku.edu.cn/webapps/bb-streammedia-hqy-bb_bb60/videoList.action', {
         course_id: `_${courseId}_1`
-    }, `s_session_id=${blackboardSession}`);
+    }, cookie);
     (0, fs_1.writeFileSync)((0, path_1.join)(__dirname, `../info/courses/${cli_tools_1.CLIT.getDate()}-${cli_tools_1.CLIT.getTime().replace(/:/g, '-')} ${courseId}.html`), body);
     const match = body.match(/hqyCourseId=(\d+)/);
     if (match === null) {
@@ -147,12 +150,14 @@ async function getLessonIds(blackboardSession, courseId, courseFolder) {
 async function getLessonInfo(hqyToken, lessonId, courseId, courseFolder) {
     const cookie = `_token=${hqyToken}`;
     const [hqyCourseId, hqySubId] = lessonId.split('-');
-    const { body } = await get('https://livingroomhqy.pku.edu.cn/courseapi/v2/schedule/search-live-course-list', {
+    const { body } = await get('https://yjapise.pku.edu.cn/courseapi/v2/schedule/search-live-course-list', {
         all: '1',
         course_id: hqyCourseId,
         sub_id: hqySubId,
         with_sub_data: '1'
-    }, cookie);
+    }, cookie, 'https://onlineroomse.pku.edu.cn/', {
+        Authorization: `Bearer ${decodeURIComponent(hqyToken).split('"').slice(-2, -1).join('')}`
+    });
     (0, fs_1.writeFileSync)((0, path_1.join)(__dirname, `../info/lessons/${cli_tools_1.CLIT.getDate()}-${cli_tools_1.CLIT.getTime().replace(/:/g, '-')} ${lessonId}.json`), body);
     const list = JSON.parse(body).list;
     if (list.length === 0) {
@@ -219,15 +224,15 @@ async function collect() {
     const ids = courseFolders.map(val => val.replace(/^.*?(?=\d*$)/, ''));
     const courseIdSet = {};
     for (const { studentId, password, name } of init_1.config.users) {
-        const session = await getBlackboardSession(studentId, password);
+        const cookie = await getBlackboardCookie(studentId, password);
         const token = await getHQYToken(studentId, name);
-        for (const id of await getCourseIds(session)) {
+        for (const id of await getCourseIds(cookie)) {
             if (courseIdSet[id]) {
                 continue;
             }
             courseIdSet[id] = true;
             let courseFolder = courseFolders[ids.indexOf(id)] ?? '';
-            const lessonIds = await getLessonIds(session, id, courseFolder);
+            const lessonIds = await getLessonIds(cookie, id, courseFolder);
             for (const lessonId of lessonIds) {
                 const info = await getLessonInfo(token, lessonId, id, courseFolder);
                 if (info === undefined) {
