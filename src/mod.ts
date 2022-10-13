@@ -149,7 +149,23 @@ async function getLessonIds(cookie: string, courseId: string, courseFolder: stri
 }
 async function getLessonInfo(hqyToken: string, lessonId: string, courseId: string, courseFolder: string) {
     const cookie = `_token=${hqyToken}`
+    const auth = `Bearer ${decodeURIComponent(hqyToken).split('"').slice(-2, -1).join('')}`
     const [hqyCourseId, hqySubId] = lessonId.split('-')
+    await get('https://onlineroomse.pku.edu.cn/consoleapi/v2/user/group-user', undefined, cookie, 'https://onlineroomse.pku.edu.cn/', {
+        Authority: 'yjapise.pku.edu.cn',
+        Authorization: auth,
+        Origin: 'https://onlineroomse.pku.edu.cn'
+    })
+    await get('https://onlineroomse.pku.edu.cn/userapi/v1/info', undefined, cookie, 'https://onlineroomse.pku.edu.cn/', {
+        Authority: 'yjapise.pku.edu.cn',
+        Authorization: auth,
+        Origin: 'https://onlineroomse.pku.edu.cn'
+    })
+    await get('https://onlineroomse.pku.edu.cn/userapi/v1/user/role/back/permission', undefined, cookie, 'https://onlineroomse.pku.edu.cn/', {
+        Authority: 'yjapise.pku.edu.cn',
+        Authorization: auth,
+        Origin: 'https://onlineroomse.pku.edu.cn'
+    })
     const {body} = await get('https://yjapise.pku.edu.cn/courseapi/v2/schedule/search-live-course-list', {
         all: '1',
         course_id: hqyCourseId,
@@ -157,7 +173,7 @@ async function getLessonInfo(hqyToken: string, lessonId: string, courseId: strin
         with_sub_data: '1'
     }, undefined, 'https://onlineroomse.pku.edu.cn/', {
         Authority: 'yjapise.pku.edu.cn',
-        Authorization: `Bearer ${decodeURIComponent(hqyToken).split('"').slice(-2, -1).join('')}`,
+        Authorization: auth,
         Origin: 'https://onlineroomse.pku.edu.cn'
     })
     writeFileSync(join(__dirname, `../info/lessons/${CLIT.getDate()}-${CLIT.getTime().replace(/:/g, '-')} ${lessonId}.json`), body)
