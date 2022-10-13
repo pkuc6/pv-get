@@ -70,17 +70,17 @@ async function getBlackboardSession(studentId: string, password: string) {
     }
     return match[1]
 }
-async function getHQYToken(studentId: string, password: string) {
-    const {body} = await post('https://portal.pku.edu.cn/portal2017/account/getBasicInfo.do', undefined, await getLoginCookie(studentId, password, 'portal2017', '北京大学校内信息门户新版', 'https://portal.pku.edu.cn/portal2017/ssoLogin.do'))
-    const {name} = JSON.parse(body)
-    if (typeof name !== 'string') {
-        throw new Error(`Fail to get hqy token of user ${studentId}`)
-    }
+async function getHQYToken(studentId: string, name: string) {
+    // const {body} = await post('https://portal.pku.edu.cn/portal2017/account/getBasicInfo.do', undefined, await getLoginCookie(studentId, password, 'portal2017', '北京大学校内信息门户新版', 'https://portal.pku.edu.cn/portal2017/ssoLogin.do'))
+    // const {name} = JSON.parse(body)
+    // if (typeof name !== 'string') {
+    //     throw new Error(`Fail to get hqy token of user ${studentId}`)
+    // }
     const match = (await get('https://passportnewhqy.pku.edu.cn/index.php', {
         r: 'auth/login',
         tenant_code: '1',
         auType: 'account',
-        name: name,
+        name,
         account: studentId
     }))
         .cookie
@@ -232,9 +232,9 @@ export async function collect() {
     const courseFolders = readdirSync(archiveDir)
     const ids = courseFolders.map(val => val.replace(/^.*?(?=\d*$)/, ''))
     const courseIdSet: Record<string, true | undefined> = {}
-    for (const {studentId, password} of config.users) {
+    for (const {studentId, password, name} of config.users) {
         const session = await getBlackboardSession(studentId, password)
-        const token = await getHQYToken(studentId, password)
+        const token = await getHQYToken(studentId, name)
         for (const id of await getCourseIds(session)) {
             if (courseIdSet[id]) {
                 continue

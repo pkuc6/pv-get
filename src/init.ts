@@ -26,7 +26,8 @@ export const config = {
     requestTimeout: 10,
     users: [{
         studentId: '1*000*****',
-        password: '********'
+        password: '********',
+        name: ''
     }]
 }
 export interface Lesson {
