@@ -155,8 +155,10 @@ async function getLessonInfo(hqyToken: string, lessonId: string, courseId: strin
         course_id: hqyCourseId,
         sub_id: hqySubId,
         with_sub_data: '1'
-    }, cookie, 'https://onlineroomse.pku.edu.cn/', {
-        Authorization: `Bearer ${decodeURIComponent(hqyToken).split('"').slice(-2, -1).join('')}`
+    }, undefined, 'https://onlineroomse.pku.edu.cn/', {
+        authority: 'yjapise.pku.edu.cn',
+        Authorization: `Bearer ${decodeURIComponent(hqyToken).split('"').slice(-2, -1).join('')}`,
+        origin: 'https://onlineroomse.pku.edu.cn'
     })
     writeFileSync(join(__dirname, `../info/lessons/${CLIT.getDate()}-${CLIT.getTime().replace(/:/g, '-')} ${lessonId}.json`), body)
     const list: {

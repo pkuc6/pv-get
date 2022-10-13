@@ -1,0 +1,15 @@
+curl 'https://yjapise.pku.edu.cn/courseapi/v2/schedule/search-live-course-list?all=1&course_id=9583&sub_id=458057&with_sub_data=1' \
+  -H 'authority: yjapise.pku.edu.cn' \
+  -H 'accept: application/json, text/plain, */*' \
+  -H 'accept-language: zh-CN,zh;q=0.9,en;q=0.8' \
+  -H 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2NvdW50IjoiMTgwMDAxMDY3MSIsImNtY0dyb3VwQ29kZSI6IjEzNTAwMDAwMTgiLCJjbWNHcm91cElkIjoiZDQzOGNhZmI0YzM0YjNiNDliM2E1MjNiYmVmNTAyMDMiLCJleHAiOjE2NjU3NjYwNzksImxvZ2luVHlwZSI6ImRlZmF1bHQiLCJtcm9sZXMiOlt7ImNtY19yb2xlIjoiMTViZDI2NzE1NDc4YjE5ZDAxYjkzYjk3ODNkZmVlNmQiLCJjb2RlIjoic3R1ZGVudCIsImNyZWF0ZWRfYXQiOiIyMDIyLTAxLTE0IDE1OjI3OjQzIiwiZGVzY3JpcHRpb24iOiLlrabnlJ_mi6XmnInigJzmoJblrabigJ3mmbrmhafkupLliqjlnKjnur_mlZnlrablubPlj7DliY3lj7DlrabkuaDor77nqIvlkozkuIrkvKDkvZzlk4Hmn6XnnIvmiJDnu6nnrqHnkIbkuKrkurrotYTmupDmnYPpmZAiLCJkaXNwbGF5X25hbWUiOiLlrabnlJ8iLCJpZCI6NDgyLCJpc2RlZmF1bHQiOiIxIn1dLCJwYXNzd29yZCI6IjM2N2YzNmRjZjg1ZGExY2EyOGUxOGFlMGU1YWNjN2VmIiwicmVhbG5hbWUiOiLlvKDlpKnotooiLCJzdWIiOjQ5OTU4OSwidGVuYW50X2lkIjoxfQ.QaaaI3PjNinmJPFPOI9h2pxfMWckpe-vk74k2yVuxBo' \
+  -H 'origin: https://onlineroomse.pku.edu.cn' \
+  -H 'referer: https://onlineroomse.pku.edu.cn/' \
+  -H 'sec-ch-ua: "Chromium";v="106", "Google Chrome";v="106", "Not;A=Brand";v="99"' \
+  -H 'sec-ch-ua-mobile: ?0' \
+  -H 'sec-ch-ua-platform: "Windows"' \
+  -H 'sec-fetch-dest: empty' \
+  -H 'sec-fetch-mode: cors' \
+  -H 'sec-fetch-site: same-site' \
+  -H 'user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36' \
+  --compressed
