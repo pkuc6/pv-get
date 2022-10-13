@@ -27,7 +27,7 @@ export const config = {
     users: [{
         studentId: '1*000*****',
         password: '********',
-        name: ''
+        token: ''
     }]
 }
 export interface Lesson {

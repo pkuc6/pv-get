@@ -149,32 +149,15 @@ async function getLessonIds(cookie: string, courseId: string, courseFolder: stri
 }
 async function getLessonInfo(hqyToken: string, lessonId: string, courseId: string, courseFolder: string) {
     const cookie = `_token=${hqyToken}`
-    const auth = `Bearer ${decodeURIComponent(hqyToken).split('"').slice(-2, -1).join('')}`
+    // const auth = `Bearer ${decodeURIComponent(hqyToken).split('"').slice(-2, -1).join('')}`
     const [hqyCourseId, hqySubId] = lessonId.split('-')
-    await get('https://onlineroomse.pku.edu.cn/consoleapi/v2/user/group-user', undefined, cookie, 'https://onlineroomse.pku.edu.cn/', {
-        Authority: 'yjapise.pku.edu.cn',
-        Authorization: auth,
-        Origin: 'https://onlineroomse.pku.edu.cn'
-    })
-    await get('https://onlineroomse.pku.edu.cn/userapi/v1/info', undefined, cookie, 'https://onlineroomse.pku.edu.cn/', {
-        Authority: 'yjapise.pku.edu.cn',
-        Authorization: auth,
-        Origin: 'https://onlineroomse.pku.edu.cn'
-    })
-    await get('https://onlineroomse.pku.edu.cn/userapi/v1/user/role/back/permission', undefined, cookie, 'https://onlineroomse.pku.edu.cn/', {
-        Authority: 'yjapise.pku.edu.cn',
-        Authorization: auth,
-        Origin: 'https://onlineroomse.pku.edu.cn'
-    })
     const {body} = await get('https://yjapise.pku.edu.cn/courseapi/v2/schedule/search-live-course-list', {
         all: '1',
         course_id: hqyCourseId,
         sub_id: hqySubId,
         with_sub_data: '1'
-    }, undefined, 'https://onlineroomse.pku.edu.cn/', {
-        Authority: 'yjapise.pku.edu.cn',
-        Authorization: auth,
-        Origin: 'https://onlineroomse.pku.edu.cn'
+    }, cookie, undefined, {
+        Authority: 'yjapise.pku.edu.cn'
     })
     writeFileSync(join(__dirname, `../info/lessons/${CLIT.getDate()}-${CLIT.getTime().replace(/:/g, '-')} ${lessonId}.json`), body)
     const list: {
@@ -259,9 +242,9 @@ export async function collect() {
     const courseFolders = readdirSync(archiveDir)
     const ids = courseFolders.map(val => val.replace(/^.*?(?=\d*$)/, ''))
     const courseIdSet: Record<string, true | undefined> = {}
-    for (const {studentId, password, name} of config.users) {
+    for (const {studentId, password, token} of config.users) {
         const cookie = await getBlackboardCookie(studentId, password)
-        const token = await getHQYToken(studentId, name)
+        // const token = await getHQYToken(studentId, name)
         for (const id of await getCourseIds(cookie)) {
             if (courseIdSet[id]) {
                 continue
@@ -272,8 +255,8 @@ export async function collect() {
             for (const lessonId of lessonIds) {
                 const info = await getLessonInfo(token, lessonId, id, courseFolder)
                 if (info === undefined) {
-                    // break
-                    continue
+                    break
+                    // continue
                 }
                 if (courseFolder.length === 0) {
                     courseFolder = info.courseFolder

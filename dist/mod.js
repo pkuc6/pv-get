@@ -149,32 +149,15 @@ async function getLessonIds(cookie, courseId, courseFolder) {
 }
 async function getLessonInfo(hqyToken, lessonId, courseId, courseFolder) {
     const cookie = `_token=${hqyToken}`;
-    const auth = `Bearer ${decodeURIComponent(hqyToken).split('"').slice(-2, -1).join('')}`;
+    // const auth = `Bearer ${decodeURIComponent(hqyToken).split('"').slice(-2, -1).join('')}`
     const [hqyCourseId, hqySubId] = lessonId.split('-');
-    await get('https://onlineroomse.pku.edu.cn/consoleapi/v2/user/group-user', undefined, cookie, 'https://onlineroomse.pku.edu.cn/', {
-        Authority: 'yjapise.pku.edu.cn',
-        Authorization: auth,
-        Origin: 'https://onlineroomse.pku.edu.cn'
-    });
-    await get('https://onlineroomse.pku.edu.cn/userapi/v1/info', undefined, cookie, 'https://onlineroomse.pku.edu.cn/', {
-        Authority: 'yjapise.pku.edu.cn',
-        Authorization: auth,
-        Origin: 'https://onlineroomse.pku.edu.cn'
-    });
-    await get('https://onlineroomse.pku.edu.cn/userapi/v1/user/role/back/permission', undefined, cookie, 'https://onlineroomse.pku.edu.cn/', {
-        Authority: 'yjapise.pku.edu.cn',
-        Authorization: auth,
-        Origin: 'https://onlineroomse.pku.edu.cn'
-    });
     const { body } = await get('https://yjapise.pku.edu.cn/courseapi/v2/schedule/search-live-course-list', {
         all: '1',
         course_id: hqyCourseId,
         sub_id: hqySubId,
         with_sub_data: '1'
-    }, undefined, 'https://onlineroomse.pku.edu.cn/', {
-        Authority: 'yjapise.pku.edu.cn',
-        Authorization: auth,
-        Origin: 'https://onlineroomse.pku.edu.cn'
+    }, cookie, undefined, {
+        Authority: 'yjapise.pku.edu.cn'
     });
     (0, fs_1.writeFileSync)((0, path_1.join)(__dirname, `../info/lessons/${cli_tools_1.CLIT.getDate()}-${cli_tools_1.CLIT.getTime().replace(/:/g, '-')} ${lessonId}.json`), body);
     const list = JSON.parse(body).list;
@@ -241,9 +224,9 @@ async function collect() {
     const courseFolders = (0, fs_1.readdirSync)(init_1.archiveDir);
     const ids = courseFolders.map(val => val.replace(/^.*?(?=\d*$)/, ''));
     const courseIdSet = {};
-    for (const { studentId, password, name } of init_1.config.users) {
+    for (const { studentId, password, token } of init_1.config.users) {
         const cookie = await getBlackboardCookie(studentId, password);
-        const token = await getHQYToken(studentId, name);
+        // const token = await getHQYToken(studentId, name)
         for (const id of await getCourseIds(cookie)) {
             if (courseIdSet[id]) {
                 continue;
@@ -254,8 +237,8 @@ async function collect() {
             for (const lessonId of lessonIds) {
                 const info = await getLessonInfo(token, lessonId, id, courseFolder);
                 if (info === undefined) {
-                    // break
-                    continue;
+                    break;
+                    // continue
                 }
                 if (courseFolder.length === 0) {
                     courseFolder = info.courseFolder;

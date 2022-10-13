@@ -30,7 +30,7 @@ exports.config = {
     users: [{
             studentId: '1*000*****',
             password: '********',
-            name: ''
+            token: ''
         }]
 };
 exports.lessons = [];
