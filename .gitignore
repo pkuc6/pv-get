@@ -1,5 +1,6 @@
 archive
 info
 node_modules
+tmp
 config.json
 lessons.json

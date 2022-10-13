@@ -157,7 +157,7 @@ async function getLessonInfo(hqyToken: string, lessonId: string, courseId: strin
         with_sub_data: '1'
     }, undefined, 'https://onlineroomse.pku.edu.cn/', {
         authority: 'yjapise.pku.edu.cn',
-        Authorization: `Bearer ${decodeURIComponent(hqyToken).split('"').slice(-2, -1).join('')}`,
+        authorization: `Bearer ${decodeURIComponent(hqyToken).split('"').slice(-2, -1).join('')}`,
         origin: 'https://onlineroomse.pku.edu.cn'
     })
     writeFileSync(join(__dirname, `../info/lessons/${CLIT.getDate()}-${CLIT.getTime().replace(/:/g, '-')} ${lessonId}.json`), body)
