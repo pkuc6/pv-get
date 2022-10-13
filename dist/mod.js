@@ -238,7 +238,8 @@ async function collect() {
             for (const lessonId of lessonIds) {
                 const info = await getLessonInfo(token, lessonId, id, courseFolder);
                 if (info === undefined) {
-                    break;
+                    // break
+                    continue;
                 }
                 if (courseFolder.length === 0) {
                     courseFolder = info.courseFolder;
