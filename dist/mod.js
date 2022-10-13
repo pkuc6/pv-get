@@ -177,7 +177,7 @@ async function getLessonInfo(hqyToken, lessonId, courseId, courseFolder) {
             }
         }
     }
-    else if (typeof surl === 'string' && surl.endsWith('.mp4')) {
+    else if (typeof surl === 'string' && (surl.endsWith('.mp4') || surl.endsWith('.m3u8'))) {
         url = surl;
     }
     if (url === undefined) {
