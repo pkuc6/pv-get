@@ -94,24 +94,27 @@ async function getHQYToken(studentId, name) {
 }
 async function getCourseIds(blackboardSession) {
     let body = '';
-    if (init_1.config.collectOldCourses) {
-        body += (await get('https://course.pku.edu.cn/webapps/portal/execute/tabs/tabAction', {
-            action: 'refreshAjaxModule',
-            modId: '_978_1',
-            tabId: '_1_1'
-        }, `s_session_id=${blackboardSession}`)).body;
-    }
+    // if (config.collectOldCourses) {
+    //     body += (await get('https://course.pku.edu.cn/webapps/portal/execute/tabs/tabAction', {
+    //         action: 'refreshAjaxModule',
+    //         modId: '_978_1',
+    //         tabId: '_1_1'
+    //     }, `s_session_id=${blackboardSession}`)).body
+    // }
     try {
-        body += (await get('https://course.pku.edu.cn/webapps/portal/execute/tabs/tabAction', {
-            action: 'refreshAjaxModule',
-            modId: '_977_1',
-            tabId: '_1_1'
+        body += (await get('https://course.pku.edu.cn/webapps/portal/execute/tabs/tabAction?tab_tab_group_id=_3_1', {
+        // action: 'refreshAjaxModule',
+        // modId: '_977_1',
+        // tabId: '_1_1'
         }, `s_session_id=${blackboardSession}`)).body;
     }
     catch (err) {
         if (err instanceof Error) {
             clit.out(err);
         }
+    }
+    if (!init_1.config.collectOldCourses) {
+        body = body.split('历史课程', 1)[0];
     }
     const ids = [];
     for (const [, id] of body.matchAll(/key=_(\d+)/g)) {
