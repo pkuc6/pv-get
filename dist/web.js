@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 async function sleep(seconds) {
     await new Promise(r => setTimeout(r, seconds * 1000));
 }
-async function get(url, params = {}, cookie = '', referer = '', headers = {}) {
+async function get(url, params = {}, cookie = '', referer = '', headers) {
     for (let i = 0; i < 10; i++) {
         const urlObj = new URL(url);
         for (const key in params) {
@@ -80,9 +80,7 @@ async function getLessonInfo(hqyCookie, lessonId, courseId) {
         course_id: hqyCourseId,
         sub_id: hqySubId,
         with_sub_data: '1'
-    }, hqyCookie, undefined, {
-        Authority: 'yjapise.pku.edu.cn'
-    });
+    }, hqyCookie, undefined);
     const list = JSON.parse(body).list;
     if (list === undefined || list.length === 0) {
         return;
@@ -138,19 +136,19 @@ async function collect() {
     const cookie = '';
     let hqyCookie = '';
     const courses = [];
-    if (location.host === 'course.pku.edu.cn') {
-        for (const { id } of await getCourseIds(cookie)) {
-            const lessonIds = await getLessonIds(cookie, id);
-            courses.push({
-                id,
-                lessonIds
-            });
-        }
-        alert('第一步完成');
-        location.replace(`https://onlineroomse.pku.edu.cn/player#${encodeURIComponent(JSON.stringify(courses))}`);
-        return;
+    for (const { id } of await getCourseIds(cookie)) {
+        const lessonIds = await getLessonIds(cookie, id);
+        courses.push({
+            id,
+            lessonIds
+        });
     }
-    courses.push(...JSON.parse(decodeURIComponent(location.hash.slice(1))));
+    // if (location.host === 'course.pku.edu.cn') {
+    //     alert('第一步完成')
+    //     location.replace(`https://onlineroomse.pku.edu.cn/player#${encodeURIComponent(JSON.stringify(courses))}`)
+    //     return
+    // }
+    // courses.push(...JSON.parse(decodeURIComponent(location.hash.slice(1))))
     for (const { id, lessonIds } of courses) {
         for (const lessonId of lessonIds) {
             const info = await getLessonInfo(hqyCookie, lessonId, id);

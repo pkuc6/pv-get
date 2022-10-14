@@ -3,7 +3,7 @@ type Term = 'Fall' | 'Spring' | 'Summer'
 async function sleep(seconds: number) {
     await new Promise(r => setTimeout(r, seconds * 1000))
 }
-async function get(url: string, params: Record<string, string | number> = {}, cookie = '', referer = '', headers: HeadersInit = {}) {
+async function get(url: string, params: Record<string, string | number> = {}, cookie = '', referer = '', headers?: HeadersInit) {
     for (let i = 0; i < 10; i++) {
         const urlObj = new URL(url)
         for (const key in params) {
@@ -82,9 +82,7 @@ async function getLessonInfo(hqyCookie: string, lessonId: string, courseId: stri
         course_id: hqyCourseId,
         sub_id: hqySubId,
         with_sub_data: '1'
-    }, hqyCookie, undefined, {
-        Authority: 'yjapise.pku.edu.cn'
-    })
+    }, hqyCookie, undefined)
     const list: {
         title: string,
         sub_title: string,
@@ -158,19 +156,19 @@ async function collect() {
         id: string
         lessonIds: string[]
     }[] = []
-    if (location.host === 'course.pku.edu.cn') {
-        for (const {id} of await getCourseIds(cookie)) {
-            const lessonIds = await getLessonIds(cookie, id)
-            courses.push({
-                id,
-                lessonIds
-            })
-        }
-        alert('第一步完成')
-        location.replace(`https://onlineroomse.pku.edu.cn/player#${encodeURIComponent(JSON.stringify(courses))}`)
-        return
+    for (const {id} of await getCourseIds(cookie)) {
+        const lessonIds = await getLessonIds(cookie, id)
+        courses.push({
+            id,
+            lessonIds
+        })
     }
-    courses.push(...JSON.parse(decodeURIComponent(location.hash.slice(1))))
+    // if (location.host === 'course.pku.edu.cn') {
+    //     alert('第一步完成')
+    //     location.replace(`https://onlineroomse.pku.edu.cn/player#${encodeURIComponent(JSON.stringify(courses))}`)
+    //     return
+    // }
+    // courses.push(...JSON.parse(decodeURIComponent(location.hash.slice(1))))
     for (const {id, lessonIds} of courses) {
         for (const lessonId of lessonIds) {
             const info = await getLessonInfo(hqyCookie, lessonId, id)
