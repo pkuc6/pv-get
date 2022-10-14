@@ -29,8 +29,7 @@ exports.config = {
     requestTimeout: 10,
     users: [{
             studentId: '1*000*****',
-            password: '********',
-            token: ''
+            password: '********'
         }]
 };
 exports.lessons = [];

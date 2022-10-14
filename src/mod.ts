@@ -74,25 +74,32 @@ async function getBlackboardCookie(studentId: string, password: string) {
     // return match[1]
     return await getLoginCookie(studentId, password, 'blackboard', '1', 'https://course.pku.edu.cn/webapps/bb-sso-bb_bb60/execute/authValidate/campusLogin')
 }
-async function getHQYToken(studentId: string, name: string) {
+async function getHQYCookie(lessonId: string, long: string, cookie: string) {
     // const {body} = await post('https://portal.pku.edu.cn/portal2017/account/getBasicInfo.do', undefined, await getLoginCookie(studentId, password, 'portal2017', '北京大学校内信息门户新版', 'https://portal.pku.edu.cn/portal2017/ssoLogin.do'))
     // const {name} = JSON.parse(body)
     // if (typeof name !== 'string') {
     //     throw new Error(`Fail to get hqy token of user ${studentId}`)
     // }
-    const match = (await get('https://passportnewhqy.pku.edu.cn/index.php', {
-        r: 'auth/login',
-        tenant_code: '1',
-        auType: 'account',
-        name,
-        account: studentId
-    }))
-        .cookie
-        .match(/_token=([^;]{16,}?)(?:;|$)/)
+    // const match = (await get('https://passportnewhqy.pku.edu.cn/index.php', {
+    //     r: 'auth/login',
+    //     tenant_code: '1',
+    //     auType: 'account',
+    //     name,
+    //     account: studentId
+    // }))
+    //     .cookie
+    //     .match(/_token=([^;]{16,}?)(?:;|$)/)
+    const [hqyCourseId, hqySubId] = lessonId.split('-')
+    const {body} = await get('https://course.pku.edu.cn/webapps/bb-streammedia-hqy-bb_bb60/playVideo.action', {
+        hqyCourseId,
+        hqySubId,
+        kcwybm: long
+    }, cookie)
+    const match = body.match(/src="(https:\/\/yjapise.pku.edu.cn\/casapi\/index.php?r=auth\/login-with-sign.+?)"/)
     if (match === null) {
-        throw new Error(`Fail to get hqy token of user ${studentId}`)
+        throw new Error(`Fail to get hqy cookie`)
     }
-    return match[1]
+    return (await get(match[1])).cookie
 }
 async function getCourseIds(cookie: string) {
     let body = ''
@@ -119,11 +126,30 @@ async function getCourseIds(cookie: string) {
     }
     const ids: string[] = []
     for (const [, id] of body.matchAll(/key=_(\d+)/g)) {
+        ids.push(id)
+    }
+    const longIds: string[] = []
+    for (const [, id] of body.matchAll(/top">([\w-]+): /g)) {
+        longIds.push(id)
+    }
+    if (ids.length !== longIds.length) {
+        clit.out('Fail to get course ids')
+    }
+    const out: {
+        id: string
+        long: string
+    }[] = []
+    for (let i = 0; i < ids.length; i++) {
+        const id = ids[i]
+        const long = longIds[i]
         if (!config.ignoreCourses.includes(Number(id))) {
-            ids.push(id)
+            out.push({
+                id,
+                long
+            })
         }
     }
-    return ids
+    return out
 }
 async function getLessonIds(cookie: string, courseId: string, courseFolder: string) {
     const {body} = await get('https://course.pku.edu.cn/webapps/bb-streammedia-hqy-bb_bb60/videoList.action', {
@@ -147,8 +173,7 @@ async function getLessonIds(cookie: string, courseId: string, courseFolder: stri
     }
     return ids
 }
-async function getLessonInfo(hqyToken: string, lessonId: string, courseId: string, courseFolder: string) {
-    const cookie = `_token=${hqyToken}`
+async function getLessonInfo(hqyCookie: string, lessonId: string, courseId: string, courseFolder: string) {
     // const auth = `Bearer ${decodeURIComponent(hqyToken).split('"').slice(-2, -1).join('')}`
     const [hqyCourseId, hqySubId] = lessonId.split('-')
     const {body} = await get('https://yjapise.pku.edu.cn/courseapi/v2/schedule/search-live-course-list', {
@@ -156,7 +181,7 @@ async function getLessonInfo(hqyToken: string, lessonId: string, courseId: strin
         course_id: hqyCourseId,
         sub_id: hqySubId,
         with_sub_data: '1'
-    }, cookie, undefined, {
+    }, hqyCookie, undefined, {
         Authority: 'yjapise.pku.edu.cn'
     })
     writeFileSync(join(__dirname, `../info/lessons/${CLIT.getDate()}-${CLIT.getTime().replace(/:/g, '-')} ${lessonId}.json`), body)
@@ -222,7 +247,7 @@ async function getLessonInfo(hqyToken: string, lessonId: string, courseId: strin
             const {body} = await get(url)
             const match = body.match(/URI="(.+)"/)
             if (match !== null) {
-                const key = (await get(match[1], undefined, cookie)).body
+                const key = (await get(match[1], undefined, hqyCookie)).body
                 if (key.length === 16) {
                     writeFileSync(
                         path,
@@ -242,10 +267,11 @@ export async function collect() {
     const courseFolders = readdirSync(archiveDir)
     const ids = courseFolders.map(val => val.replace(/^.*?(?=\d*$)/, ''))
     const courseIdSet: Record<string, true | undefined> = {}
-    for (const {studentId, password, token} of config.users) {
+    for (const {studentId, password} of config.users) {
         const cookie = await getBlackboardCookie(studentId, password)
+        let hqyCookie = ''
         // const token = await getHQYToken(studentId, name)
-        for (const id of await getCourseIds(cookie)) {
+        for (const {id, long} of await getCourseIds(cookie)) {
             if (courseIdSet[id]) {
                 continue
             }
@@ -253,7 +279,10 @@ export async function collect() {
             let courseFolder = courseFolders[ids.indexOf(id)] ?? ''
             const lessonIds = await getLessonIds(cookie, id, courseFolder)
             for (const lessonId of lessonIds) {
-                const info = await getLessonInfo(token, lessonId, id, courseFolder)
+                if (hqyCookie.length === 0) {
+                    hqyCookie = await getHQYCookie(lessonId, long, cookie)
+                }
+                const info = await getLessonInfo(hqyCookie, lessonId, id, courseFolder)
                 if (info === undefined) {
                     break
                     // continue
