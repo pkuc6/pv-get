@@ -10,13 +10,16 @@ async function get(url, params = {}, cookie = '', referer = '', headers) {
     }
     for (let i = 0; i < 10; i++) {
         const result = await new Promise(async (r) => {
+            const controller = new AbortController();
             setTimeout(() => {
+                controller.abort();
                 r(undefined);
             }, 10000);
             try {
                 const res = await fetch(urlObj, {
                     headers,
-                    credentials: 'include'
+                    credentials: 'include',
+                    signal: controller.signal
                 });
                 r({
                     body: await res.text()
@@ -24,6 +27,7 @@ async function get(url, params = {}, cookie = '', referer = '', headers) {
                 return;
             }
             catch (err) {
+                controller.abort();
                 console.error(err);
             }
             await sleep(5);

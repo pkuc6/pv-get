@@ -10,19 +10,23 @@ async function get(url: string, params: Record<string, string | number> = {}, co
     }
     for (let i = 0; i < 10; i++) {
         const result: {body: string} | undefined = await new Promise(async r => {
+            const controller = new AbortController()
             setTimeout(() => {
+                controller.abort()
                 r(undefined)
             }, 10000)
             try {
                 const res = await fetch(urlObj, {
                     headers,
-                    credentials: 'include'
+                    credentials: 'include',
+                    signal: controller.signal
                 })
                 r({
                     body: await res.text()
                 })
                 return
             } catch (err) {
+                controller.abort()
                 console.error(err)
             }
             await sleep(5)
