@@ -95,7 +95,7 @@ async function getHQYCookie(lessonId: string, long: string, cookie: string) {
         hqySubId,
         kcwybm: long
     }, cookie)
-    const match = body.match(/src="(https:\/\/yjapise.pku.edu.cn\/casapi\/index.php?r=auth\/login-with-sign.+?)"/)
+    const match = body.match(/src="(https:\/\/yjapise\.pku\.edu\.cn\/casapi\/index\.php\?r=auth\/login-with-sign.+?)"/)
     if (match === null) {
         throw new Error(`Fail to get hqy cookie`)
     }
