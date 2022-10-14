@@ -21,10 +21,12 @@ async function get(url: string, params: Record<string, string | number> = {}, co
                     credentials: 'include',
                     signal: controller.signal
                 })
-                r({
-                    body: await res.text()
-                })
-                return
+                if (res.ok) {
+                    r({
+                        body: await res.text()
+                    })
+                    return
+                }
             } catch (err) {
                 controller.abort()
                 console.error(err)

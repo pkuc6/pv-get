@@ -21,10 +21,12 @@ async function get(url, params = {}, cookie = '', referer = '', headers) {
                     credentials: 'include',
                     signal: controller.signal
                 });
-                r({
-                    body: await res.text()
-                });
-                return;
+                if (res.ok) {
+                    r({
+                        body: await res.text()
+                    });
+                    return;
+                }
             }
             catch (err) {
                 controller.abort();
