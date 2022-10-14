@@ -12,13 +12,10 @@ async function get(url: string, params: Record<string, string | number> = {}, co
         try {
             const res = await fetch(urlObj, {
                 headers,
-                credentials: 'include',
-                mode: 'no-cors'
+                credentials: 'include'
             })
-            if (res.ok) {
-                return {
-                    body: await res.text()
-                }
+            return {
+                body: await res.text()
             }
         } catch (err) {
             console.error(err)
