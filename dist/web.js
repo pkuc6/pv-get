@@ -151,6 +151,7 @@ async function collect() {
     courses.push(...JSON.parse(decodeURIComponent(location.hash.slice(1))));
     for (const { id, lessonIds } of courses) {
         for (const lessonId of lessonIds) {
+            await sleep(1);
             const info = await getLessonInfo(hqyCookie, lessonId, id);
             if (info === undefined) {
                 break;
