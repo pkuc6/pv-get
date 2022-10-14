@@ -10,7 +10,7 @@ async function get(url: string, params: Record<string, string | number> = {}, co
             urlObj.searchParams.set(key, params[key].toString())
         }
         try {
-            const res = await fetch(url, {
+            const res = await fetch(urlObj, {
                 headers
             })
             if (res.ok) {

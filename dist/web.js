@@ -10,7 +10,7 @@ async function get(url, params = {}, cookie = '', referer = '', headers = {}) {
             urlObj.searchParams.set(key, params[key].toString());
         }
         try {
-            const res = await fetch(url, {
+            const res = await fetch(urlObj, {
                 headers
             });
             if (res.ok) {
