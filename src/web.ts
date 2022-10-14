@@ -4,24 +4,34 @@ async function sleep(seconds: number) {
     await new Promise(r => setTimeout(r, seconds * 1000))
 }
 async function get(url: string, params: Record<string, string | number> = {}, cookie = '', referer = '', headers?: HeadersInit) {
+    const urlObj = new URL(url)
+    for (const key in params) {
+        urlObj.searchParams.set(key, params[key].toString())
+    }
     for (let i = 0; i < 10; i++) {
-        const urlObj = new URL(url)
-        for (const key in params) {
-            urlObj.searchParams.set(key, params[key].toString())
-        }
-        try {
-            const res = await fetch(urlObj, {
-                headers,
-                credentials: 'include',
-                mode: 'no-cors'
-            })
-            return {
-                body: await res.text()
+        const result: {body: string} | undefined = await new Promise(async r => {
+            setTimeout(() => {
+                r(undefined)
+            }, 10000)
+            try {
+                const res = await fetch(urlObj, {
+                    headers,
+                    credentials: 'include',
+                    mode: 'no-cors'
+                })
+                r({
+                    body: await res.text()
+                })
+                return
+            } catch (err) {
+                console.error(err)
             }
-        } catch (err) {
-            console.error(err)
+            await sleep(5)
+            r(undefined)
+        })
+        if (result !== undefined) {
+            return result
         }
-        await sleep(5)
     }
     throw new Error(`Fail to get ${url}`)
 }
