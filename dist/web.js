@@ -16,8 +16,7 @@ async function get(url, params = {}, cookie = '', referer = '', headers) {
             try {
                 const res = await fetch(urlObj, {
                     headers,
-                    credentials: 'include',
-                    mode: 'no-cors'
+                    credentials: 'include'
                 });
                 r({
                     body: await res.text()
@@ -128,16 +127,6 @@ async function getLessonInfo(hqyCookie, lessonId, courseId) {
         courseFolder: `${courseName} (${year} ${term} ${teacher}) ${courseId}`,
         lessonName,
     };
-    if (url.endsWith('.m3u8')) {
-        const { body } = await get(url);
-        const match = body.match(/URI="(.+)"/);
-        if (match !== null) {
-            const key = (await get(match[1], undefined, hqyCookie)).body;
-            if (key.length === 16) {
-                info.key = key;
-            }
-        }
-    }
     console.info(`Get info of ${courseName} ${lessonName}`);
     return info;
 }
@@ -158,15 +147,33 @@ async function collect() {
         location.replace(`https://yjapise.pku.edu.cn/#${encodeURIComponent(JSON.stringify(courses))}`);
         return;
     }
-    courses.push(...JSON.parse(decodeURIComponent(location.hash.slice(1))));
-    for (const { id, lessonIds } of courses) {
-        for (const lessonId of lessonIds) {
-            await sleep(1);
-            const info = await getLessonInfo(hqyCookie, lessonId, id);
-            if (info === undefined) {
-                break;
+    if (location.host === 'yjapise.pku.edu.cn') {
+        courses.push(...JSON.parse(decodeURIComponent(location.hash.slice(1))));
+        for (const { id, lessonIds } of courses) {
+            for (const lessonId of lessonIds) {
+                await sleep(1);
+                const info = await getLessonInfo(hqyCookie, lessonId, id);
+                if (info === undefined) {
+                    break;
+                }
+                lessons.push(info);
             }
-            lessons.push(info);
+        }
+        alert('第二步完成');
+        location.replace(`https://resourcese.pku.edu.cn/play/#${encodeURIComponent(JSON.stringify(lessons))}`);
+        return;
+    }
+    lessons.push(...JSON.parse(decodeURIComponent(location.hash.slice(1))));
+    for (const info of lessons) {
+        if (info.url.endsWith('.m3u8')) {
+            const { body } = await get(info.url);
+            const match = body.match(/URI="(.+)"/);
+            if (match !== null) {
+                const key = (await get(match[1], undefined, hqyCookie)).body;
+                if (key.length === 16) {
+                    info.key = key;
+                }
+            }
         }
     }
     const a = document.createElement('a');
