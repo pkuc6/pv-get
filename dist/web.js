@@ -11,7 +11,8 @@ async function get(url, params = {}, cookie = '', referer = '', headers) {
         }
         try {
             const res = await fetch(urlObj, {
-                headers
+                headers,
+                credentials: 'include'
             });
             if (res.ok) {
                 return {

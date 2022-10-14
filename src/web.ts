@@ -11,7 +11,8 @@ async function get(url: string, params: Record<string, string | number> = {}, co
         }
         try {
             const res = await fetch(urlObj, {
-                headers
+                headers,
+                credentials: 'include'
             })
             if (res.ok) {
                 return {
