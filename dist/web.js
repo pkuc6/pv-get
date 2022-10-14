@@ -137,8 +137,21 @@ async function collect() {
     const lessons = [];
     const cookie = '';
     let hqyCookie = '';
-    for (const { id } of await getCourseIds(cookie)) {
-        const lessonIds = await getLessonIds(cookie, id);
+    const courses = [];
+    if (location.host === 'course.pku.edu.cn') {
+        for (const { id } of await getCourseIds(cookie)) {
+            const lessonIds = await getLessonIds(cookie, id);
+            courses.push({
+                id,
+                lessonIds
+            });
+        }
+        alert('第一步完成');
+        location.replace(`https://onlineroomse.pku.edu.cn/player#${encodeURIComponent(JSON.stringify(courses))}`);
+        return;
+    }
+    courses.push(...JSON.parse(decodeURIComponent(location.hash)));
+    for (const { id, lessonIds } of courses) {
         for (const lessonId of lessonIds) {
             const info = await getLessonInfo(hqyCookie, lessonId, id);
             if (info === undefined) {
