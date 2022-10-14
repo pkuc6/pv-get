@@ -12,7 +12,8 @@ async function get(url, params = {}, cookie = '', referer = '', headers) {
         try {
             const res = await fetch(urlObj, {
                 headers,
-                credentials: 'include'
+                credentials: 'include',
+                mode: 'no-cors'
             });
             return {
                 body: await res.text()
