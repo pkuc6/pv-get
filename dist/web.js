@@ -150,7 +150,7 @@ async function collect() {
         location.replace(`https://onlineroomse.pku.edu.cn/player#${encodeURIComponent(JSON.stringify(courses))}`);
         return;
     }
-    courses.push(...JSON.parse(decodeURIComponent(location.hash)));
+    courses.push(...JSON.parse(decodeURIComponent(location.hash.slice(1))));
     for (const { id, lessonIds } of courses) {
         for (const lessonId of lessonIds) {
             const info = await getLessonInfo(hqyCookie, lessonId, id);
