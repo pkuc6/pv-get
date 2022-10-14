@@ -33,6 +33,7 @@ export interface Lesson {
     url: string
     courseFolder: string
     lessonName: string
+    key?: string
 }
 export const lessons: Lesson[] = []
 const path0 = join(__dirname, '../config.json')

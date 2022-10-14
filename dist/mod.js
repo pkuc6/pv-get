@@ -231,6 +231,7 @@ async function getLessonInfo(hqyCookie, lessonId, courseId, courseFolder) {
             if (match !== null) {
                 const key = (await get(match[1], undefined, hqyCookie)).body;
                 if (key.length === 16) {
+                    info.key = key;
                     (0, fs_1.writeFileSync)(path, body
                         .replace(/URI=".+"/, `URI="https://vk.pku6.workers.dev/${key}"`)
                         .replace(/segment_/g, new URL('segment_', url).href));
@@ -351,7 +352,7 @@ async function download() {
         if (lesson === undefined) {
             break;
         }
-        const { url, courseFolder, lessonName } = lesson;
+        const { url, courseFolder, lessonName, key } = lesson;
         const path = (0, path_1.join)(init_1.archiveDir, `${courseFolder}/${lessonName}.mp4`);
         if ((0, fs_1.existsSync)(path)) {
             (0, init_1.saveLessons)();
@@ -360,8 +361,15 @@ async function download() {
         if (url.endsWith('.m3u8')) {
             const m3u8Path = (0, path_1.join)(init_1.archiveDir, `${courseFolder}/${lessonName}.m3u8`);
             if (!(0, fs_1.existsSync)(m3u8Path)) {
-                (0, init_1.saveLessons)();
-                continue;
+                if (key === undefined) {
+                    (0, init_1.saveLessons)();
+                    continue;
+                }
+                const { body } = await get(url);
+                (0, fs_1.writeFileSync)(m3u8Path, body
+                    .replace(/URI=".+"/, `URI="https://vk.pku6.workers.dev/${key}"`)
+                    .replace(/segment_/g, new URL('segment_', url).href));
+                clit.out(`${m3u8Path} created`);
             }
             let remoteDir = '';
             const ids = [];

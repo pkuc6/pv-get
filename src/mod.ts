@@ -249,6 +249,7 @@ async function getLessonInfo(hqyCookie: string, lessonId: string, courseId: stri
             if (match !== null) {
                 const key = (await get(match[1], undefined, hqyCookie)).body
                 if (key.length === 16) {
+                    info.key = key
                     writeFileSync(
                         path,
                         body
@@ -371,7 +372,7 @@ export async function download() {
         if (lesson === undefined) {
             break
         }
-        const {url, courseFolder, lessonName} = lesson
+        const {url, courseFolder, lessonName, key} = lesson
         const path = join(archiveDir, `${courseFolder}/${lessonName}.mp4`)
         if (existsSync(path)) {
             saveLessons()
@@ -380,8 +381,18 @@ export async function download() {
         if (url.endsWith('.m3u8')) {
             const m3u8Path = join(archiveDir, `${courseFolder}/${lessonName}.m3u8`)
             if (!existsSync(m3u8Path)) {
-                saveLessons()
-                continue
+                if (key === undefined) {
+                    saveLessons()
+                    continue
+                }
+                const {body} = await get(url)
+                writeFileSync(
+                    m3u8Path,
+                    body
+                        .replace(/URI=".+"/, `URI="https://vk.pku6.workers.dev/${key}"`)
+                        .replace(/segment_/g, new URL('segment_', url).href)
+                )
+                clit.out(`${m3u8Path} created`)
             }
             let remoteDir = ''
             const ids: number[] = []
