@@ -1,5 +1,7 @@
 # 获取所有录播的地址
 
+需要连接北大 VPN 或北大校园网.
+
 打开教学网中任一录播观看页面 (形如 https://course.pku.edu.cn/webapps/bb-streammedia-hqy-bb_bb60/playVideo.action?hqyCourseId=34241&hqySubId=789877&kcwybm=21222-001-00112610-0006172287-3).
 
 按 Ctrl+Shift+i 再按 Ctrl+~ 进入控制台 (Console), 粘帖如下命令并回车.
