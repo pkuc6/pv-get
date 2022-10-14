@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.collect = void 0;
 async function sleep(seconds) {
     await new Promise(r => setTimeout(r, seconds * 1000));
 }
@@ -155,4 +154,4 @@ async function collect() {
     a.click();
     console.info('Finished');
 }
-exports.collect = collect;
+collect();

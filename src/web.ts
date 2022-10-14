@@ -150,7 +150,7 @@ async function getLessonInfo(hqyCookie: string, lessonId: string, courseId: stri
     console.info(`Get info of ${courseName} ${lessonName}`)
     return info
 }
-export async function collect() {
+async function collect() {
     const lessons: Lesson[] = []
     const cookie = ''
     let hqyCookie = ''
@@ -171,3 +171,4 @@ export async function collect() {
     a.click()
     console.info('Finished')
 }
+collect()
