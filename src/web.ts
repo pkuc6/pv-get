@@ -12,7 +12,8 @@ async function get(url: string, params: Record<string, string | number> = {}, co
         try {
             const res = await fetch(urlObj, {
                 headers,
-                credentials: 'include'
+                credentials: 'include',
+                mode: 'no-cors'
             })
             if (res.ok) {
                 return {
@@ -157,19 +158,19 @@ async function collect() {
         id: string
         lessonIds: string[]
     }[] = []
-    for (const {id} of await getCourseIds(cookie)) {
-        const lessonIds = await getLessonIds(cookie, id)
-        courses.push({
-            id,
-            lessonIds
-        })
+    if (location.host === 'course.pku.edu.cn') {
+        for (const {id} of await getCourseIds(cookie)) {
+            const lessonIds = await getLessonIds(cookie, id)
+            courses.push({
+                id,
+                lessonIds
+            })
+        }
+        alert('第一步完成')
+        location.replace(`https://yjapise.pku.edu.cn/#${encodeURIComponent(JSON.stringify(courses))}`)
+        return
     }
-    // if (location.host === 'course.pku.edu.cn') {
-    //     alert('第一步完成')
-    //     location.replace(`https://onlineroomse.pku.edu.cn/player#${encodeURIComponent(JSON.stringify(courses))}`)
-    //     return
-    // }
-    // courses.push(...JSON.parse(decodeURIComponent(location.hash.slice(1))))
+    courses.push(...JSON.parse(decodeURIComponent(location.hash.slice(1))))
     for (const {id, lessonIds} of courses) {
         for (const lessonId of lessonIds) {
             const info = await getLessonInfo(hqyCookie, lessonId, id)
